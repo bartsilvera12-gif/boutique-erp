@@ -18,7 +18,8 @@ const PRODUCTO_COLS =
   "factor_compra_receta, tiempo_prep_minutos, descripcion, precio_mayorista, cantidad_minima_mayorista, precio_distribuidor, modo_receta, " +
   // Autopartes (Fase 1)
   "codigo_oem, codigo_alternativo, marca_repuesto, garantia_meses, permitir_venta_sin_stock, " +
-  "ubicacion_deposito, ubicacion_pasillo, ubicacion_estante, ubicacion_caja";
+  "ubicacion_deposito, ubicacion_pasillo, ubicacion_estante, ubicacion_caja, " +
+  "distribuidor_nombre, distribuidor_comision_pct";
 
 function toNumber(v: unknown): unknown {
   return typeof v === "string" ? Number(v) : v;
@@ -205,6 +206,19 @@ export async function POST(request: NextRequest) {
       typeof body.ubicacion_estante === "string" ? body.ubicacion_estante.trim() || null : null;
     insertPayload.ubicacion_caja =
       typeof body.ubicacion_caja === "string" ? body.ubicacion_caja.trim() || null : null;
+
+    // Distribuidor + comisión (opcionales)
+    insertPayload.distribuidor_nombre =
+      typeof body.distribuidor_nombre === "string" ? body.distribuidor_nombre.trim() || null : null;
+    {
+      const raw = body.distribuidor_comision_pct;
+      let comision: number | null = null;
+      if (raw !== undefined && raw !== null && raw !== "") {
+        const n = Number(raw);
+        if (Number.isFinite(n) && n >= 0 && n <= 100) comision = Math.round(n * 100) / 100;
+      }
+      insertPayload.distribuidor_comision_pct = comision;
+    }
 
     const ins = await sb.from("productos").insert(insertPayload).select(PRODUCTO_COLS).single();
     if (ins.error) {

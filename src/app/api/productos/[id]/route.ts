@@ -14,7 +14,8 @@ const PRODUCTO_COLS =
   "factor_compra_receta, tiempo_prep_minutos, descripcion, precio_mayorista, cantidad_minima_mayorista, precio_distribuidor, modo_receta, " +
   // Autopartes (Fase 1)
   "codigo_oem, codigo_alternativo, marca_repuesto, garantia_meses, permitir_venta_sin_stock, " +
-  "ubicacion_deposito, ubicacion_pasillo, ubicacion_estante, ubicacion_caja";
+  "ubicacion_deposito, ubicacion_pasillo, ubicacion_estante, ubicacion_caja, " +
+  "distribuidor_nombre, distribuidor_comision_pct";
 
 function toNumber(v: unknown): unknown {
   return typeof v === "string" ? Number(v) : v;
@@ -200,6 +201,20 @@ export async function PATCH(
     if (body.ubicacion_caja !== undefined) {
       const v = body.ubicacion_caja == null ? "" : String(body.ubicacion_caja).trim();
       patch.ubicacion_caja = v || null;
+    }
+    if (body.distribuidor_nombre !== undefined) {
+      const v = body.distribuidor_nombre == null ? "" : String(body.distribuidor_nombre).trim();
+      patch.distribuidor_nombre = v || null;
+    }
+    if (body.distribuidor_comision_pct !== undefined) {
+      const raw = body.distribuidor_comision_pct;
+      if (raw === null || raw === "") {
+        patch.distribuidor_comision_pct = null;
+      } else {
+        const n = Number(raw);
+        patch.distribuidor_comision_pct =
+          Number.isFinite(n) && n >= 0 && n <= 100 ? Math.round(n * 100) / 100 : null;
+      }
     }
 
     if (Object.keys(patch).length === 0) {

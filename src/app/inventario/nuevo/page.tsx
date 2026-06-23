@@ -50,6 +50,8 @@ export default function NuevoProductoPage() {
     codigo_alternativo: "",
     marca_repuesto: "",
     garantia_meses: "",
+    distribuidor_nombre: "",
+    distribuidor_comision_pct: "",
   });
   const [permitirVentaSinStock, setPermitirVentaSinStock] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -358,6 +360,8 @@ export default function NuevoProductoPage() {
           marca_repuesto: form.marca_repuesto.trim() || null,
           garantia_meses: form.garantia_meses.trim() === "" ? null : Math.max(parseInt(form.garantia_meses) || 0, 0),
           permitir_venta_sin_stock: permitirVentaSinStock,
+          distribuidor_nombre: form.distribuidor_nombre.trim() || null,
+          distribuidor_comision_pct: form.distribuidor_comision_pct.trim() === "" ? null : Math.min(Math.max(parseFloat(form.distribuidor_comision_pct) || 0, 0), 100),
         });
       } catch (err) {
         console.error("[inventario/nuevo] saveProducto error:", err);
@@ -1134,6 +1138,34 @@ export default function NuevoProductoPage() {
                   />
                   Permitir vender aún sin stock disponible
                 </label>
+              </div>
+              <div className="sm:col-span-2 pt-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Distribuidor</p>
+              </div>
+              <div>
+                <label className={labelClass}>Nombre del distribuidor</label>
+                <input
+                  type="text"
+                  name="distribuidor_nombre"
+                  value={form.distribuidor_nombre}
+                  onChange={handleChange}
+                  placeholder="ej. BOSCH ARGENTINA"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>% comisión al distribuidor</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.01}
+                  name="distribuidor_comision_pct"
+                  value={form.distribuidor_comision_pct}
+                  onChange={handleChange}
+                  placeholder="0"
+                  className={inputClass}
+                />
               </div>
             </div>
           </details>

@@ -236,6 +236,8 @@ export async function saveProducto(
     ubicacion_pasillo: datos.ubicacion_pasillo ?? null,
     ubicacion_estante: datos.ubicacion_estante ?? null,
     ubicacion_caja: datos.ubicacion_caja ?? null,
+    distribuidor_nombre: datos.distribuidor_nombre ?? null,
+    distribuidor_comision_pct: datos.distribuidor_comision_pct ?? null,
   };
 
   const res = await fetch("/api/productos", {
@@ -312,6 +314,8 @@ export async function updateProducto(
   if (datos.ubicacion_pasillo !== undefined) body.ubicacion_pasillo = datos.ubicacion_pasillo ?? null;
   if (datos.ubicacion_estante !== undefined) body.ubicacion_estante = datos.ubicacion_estante ?? null;
   if (datos.ubicacion_caja !== undefined) body.ubicacion_caja = datos.ubicacion_caja ?? null;
+  if (datos.distribuidor_nombre !== undefined) body.distribuidor_nombre = datos.distribuidor_nombre ?? null;
+  if (datos.distribuidor_comision_pct !== undefined) body.distribuidor_comision_pct = datos.distribuidor_comision_pct ?? null;
 
   const res = await fetch(`/api/productos/${encodeURIComponent(id)}`, {
     method: "PATCH",

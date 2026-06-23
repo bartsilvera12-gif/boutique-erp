@@ -66,6 +66,10 @@ export interface Producto {
   ubicacion_estante?: string | null;
   /** Ubicación física: caja / contenedor. */
   ubicacion_caja?: string | null;
+  /** Nombre del distribuidor del repuesto (texto libre, p. ej. "BOSCH ARGENTINA"). */
+  distribuidor_nombre?: string | null;
+  /** % de comisión del distribuidor sobre la venta (0–100). */
+  distribuidor_comision_pct?: number | null;
 }
 
 export interface MovimientoInventario {
