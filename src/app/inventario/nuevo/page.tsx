@@ -44,7 +44,17 @@ export default function NuevoProductoPage() {
     stock_minimo: "",
     unidad_medida: "UNIDAD",
     metodo_valuacion: "CPP" as MetodoValuacion,
+    // Autopartes (Fase 2)
+    codigo_oem: "",
+    codigo_alternativo: "",
+    marca_repuesto: "",
+    garantia_meses: "",
+    ubicacion_deposito: "",
+    ubicacion_pasillo: "",
+    ubicacion_estante: "",
+    ubicacion_caja: "",
   });
+  const [permitirVentaSinStock, setPermitirVentaSinStock] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [generandoCodigo, setGenerandoCodigo] = useState(false);
   const [generandoSku, setGenerandoSku] = useState(false);
@@ -344,6 +354,16 @@ export default function NuevoProductoPage() {
           unidad_receta: unidadReceta.trim() || null,
           factor_compra_receta: Math.max(parseFloat(factorCompraReceta) || 1, 0.0001),
           tiempo_prep_minutos: Math.max(parseInt(tiempoPrepMinutos) || 0, 0),
+          // Autopartes — opcionales (trim a null si vacíos)
+          codigo_oem: form.codigo_oem.trim() || null,
+          codigo_alternativo: form.codigo_alternativo.trim() || null,
+          marca_repuesto: form.marca_repuesto.trim() || null,
+          garantia_meses: form.garantia_meses.trim() === "" ? null : Math.max(parseInt(form.garantia_meses) || 0, 0),
+          permitir_venta_sin_stock: permitirVentaSinStock,
+          ubicacion_deposito: form.ubicacion_deposito.trim() || null,
+          ubicacion_pasillo: form.ubicacion_pasillo.trim() || null,
+          ubicacion_estante: form.ubicacion_estante.trim() || null,
+          ubicacion_caja: form.ubicacion_caja.trim() || null,
         });
       } catch (err) {
         console.error("[inventario/nuevo] saveProducto error:", err);
@@ -1056,6 +1076,119 @@ export default function NuevoProductoPage() {
               <option value="LIFO">LIFO — Último en entrar, primero en salir</option>
             </select>
           </div>
+
+          {/* Datos de autopartes (Fase 2 — todos opcionales) */}
+          <details className="rounded-lg border border-slate-200 bg-white p-4 open:shadow-sm">
+            <summary className="cursor-pointer text-sm font-semibold text-slate-700 hover:text-slate-900">
+              Datos de autopartes (opcional)
+            </summary>
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className={labelClass}>Código OEM (original)</label>
+                <input
+                  type="text"
+                  name="codigo_oem"
+                  value={form.codigo_oem}
+                  onChange={handleChange}
+                  placeholder="ej. 90915-YZZE1"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Código alternativo</label>
+                <input
+                  type="text"
+                  name="codigo_alternativo"
+                  value={form.codigo_alternativo}
+                  onChange={handleChange}
+                  placeholder="ej. WIX-57045"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Marca del repuesto</label>
+                <input
+                  type="text"
+                  name="marca_repuesto"
+                  value={form.marca_repuesto}
+                  onChange={handleChange}
+                  placeholder="ej. Bosch, NGK, Mahle"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Garantía (meses)</label>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  name="garantia_meses"
+                  value={form.garantia_meses}
+                  onChange={handleChange}
+                  placeholder="0"
+                  className={inputClass}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={permitirVentaSinStock}
+                    onChange={(e) => setPermitirVentaSinStock(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-[#0EA5E9] focus:ring-[#0EA5E9]"
+                  />
+                  Permitir vender aún sin stock disponible
+                </label>
+              </div>
+              <div className="sm:col-span-2 pt-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Ubicación física en el depósito</p>
+              </div>
+              <div>
+                <label className={labelClass}>Depósito</label>
+                <input
+                  type="text"
+                  name="ubicacion_deposito"
+                  value={form.ubicacion_deposito}
+                  onChange={handleChange}
+                  placeholder="ej. Depósito 1"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Pasillo</label>
+                <input
+                  type="text"
+                  name="ubicacion_pasillo"
+                  value={form.ubicacion_pasillo}
+                  onChange={handleChange}
+                  placeholder="ej. P-3"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Estante</label>
+                <input
+                  type="text"
+                  name="ubicacion_estante"
+                  value={form.ubicacion_estante}
+                  onChange={handleChange}
+                  placeholder="ej. E-2"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Caja / contenedor</label>
+                <input
+                  type="text"
+                  name="ubicacion_caja"
+                  value={form.ubicacion_caja}
+                  onChange={handleChange}
+                  placeholder="ej. C-15"
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          </details>
 
           {/* Acciones */}
           <div className="flex gap-4 pt-2">

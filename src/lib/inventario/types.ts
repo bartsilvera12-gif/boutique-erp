@@ -45,6 +45,27 @@ export interface Producto {
   descripcion?: string | null;
   /** Modo de receta (productos de Menú): 'preparado_al_vender' | 'produccion_previa'. */
   modo_receta?: string;
+  // ───────────────────────────────────────────────────────────────────
+  // Autopartes (Fase 1 — todos opcionales).
+  // ───────────────────────────────────────────────────────────────────
+  /** Código OEM / código original del fabricante del vehículo. */
+  codigo_oem?: string | null;
+  /** Código alternativo / equivalente comercial. */
+  codigo_alternativo?: string | null;
+  /** Marca del repuesto (no confundir con marca del vehículo). */
+  marca_repuesto?: string | null;
+  /** Garantía en meses (entero ≥ 0). */
+  garantia_meses?: number | null;
+  /** Permitir vender aún si stock_actual = 0. */
+  permitir_venta_sin_stock?: boolean;
+  /** Ubicación física: depósito (texto libre). */
+  ubicacion_deposito?: string | null;
+  /** Ubicación física: pasillo. */
+  ubicacion_pasillo?: string | null;
+  /** Ubicación física: estante. */
+  ubicacion_estante?: string | null;
+  /** Ubicación física: caja / contenedor. */
+  ubicacion_caja?: string | null;
 }
 
 export interface MovimientoInventario {

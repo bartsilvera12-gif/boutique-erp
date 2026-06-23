@@ -224,6 +224,18 @@ export async function saveProducto(
         ? datos.tiempo_prep_minutos
         : 0,
     descripcion: datos.descripcion ?? null,
+    // Autopartes (Fase 1) — pasar al endpoint sólo si vienen definidos.
+    codigo_oem: datos.codigo_oem ?? null,
+    codigo_alternativo: datos.codigo_alternativo ?? null,
+    marca_repuesto: datos.marca_repuesto ?? null,
+    garantia_meses: datos.garantia_meses ?? null,
+    permitir_venta_sin_stock: typeof datos.permitir_venta_sin_stock === "boolean"
+      ? datos.permitir_venta_sin_stock
+      : false,
+    ubicacion_deposito: datos.ubicacion_deposito ?? null,
+    ubicacion_pasillo: datos.ubicacion_pasillo ?? null,
+    ubicacion_estante: datos.ubicacion_estante ?? null,
+    ubicacion_caja: datos.ubicacion_caja ?? null,
   };
 
   const res = await fetch("/api/productos", {
