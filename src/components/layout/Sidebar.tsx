@@ -98,6 +98,7 @@ const ALLOWED_MENU_KEYS = new Set<string>([
   "gastos",
   "reportes",
   "configuracion",
+  "inventario",
 ]);
 
 const MENU_STRUCTURE: MenuItem[] = [
