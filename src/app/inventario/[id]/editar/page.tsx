@@ -7,6 +7,7 @@ import MontoInput from "@/components/ui/MontoInput";
 import { getProducto, productoExiste, updateProducto } from "@/lib/inventario/storage";
 import type { MetodoValuacion } from "@/lib/inventario/types";
 import ProductImageUploader from "@/components/inventario/ProductImageUploader";
+import CompatibilidadVehicularEditor from "@/components/inventario/CompatibilidadVehicularEditor";
 import SelectFromList from "@/components/inventario/SelectFromList";
 import ProveedoresCostos from "@/components/inventario/ProveedoresCostos";
 import { ShoppingBag, Boxes, ClipboardList, type LucideIcon } from "lucide-react";
@@ -1054,6 +1055,18 @@ export default function EditarProductoPage() {
               </div>
             </div>
           </details>
+
+          {/* Compatibilidad vehicular — sólo disponible en Editar porque necesita producto_id */}
+          {id && (
+            <details className="rounded-lg border border-slate-200 bg-white p-4 open:shadow-sm">
+              <summary className="cursor-pointer text-sm font-semibold text-slate-700 hover:text-slate-900">
+                Compatibilidad vehicular (opcional)
+              </summary>
+              <div className="mt-4">
+                <CompatibilidadVehicularEditor productoId={id} />
+              </div>
+            </details>
+          )}
 
           <div className="flex gap-4 pt-2">
             <button
