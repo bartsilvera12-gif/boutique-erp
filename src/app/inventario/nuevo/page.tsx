@@ -42,7 +42,7 @@ export default function NuevoProductoPage() {
     cantidad_minima_mayorista: "",
     stock_actual: "",
     stock_minimo: "",
-    unidad_medida: "",
+    unidad_medida: "UNIDAD",
     metodo_valuacion: "CPP" as MetodoValuacion,
   });
   const [submitting, setSubmitting] = useState(false);
@@ -59,9 +59,11 @@ export default function NuevoProductoPage() {
   const [esVendible, setEsVendible] = useState(true);
   const [esInsumo, setEsInsumo] = useState(false);
 
-  // Selector inicial de tipo gastronómico — aplica presets a los flags
+  // Selector inicial de tipo gastronómico — aplica presets a los flags.
+  // En esta instancia (Autorepuestos Felix Bogado) sólo se cargan productos
+  // de reventa, así que arrancamos directo en ese tipo y omitimos el picker.
   type TipoGastro = "reventa" | "menu" | "materia" | null;
-  const [tipoGastro, setTipoGastro] = useState<TipoGastro>(null);
+  const [tipoGastro, setTipoGastro] = useState<TipoGastro>("reventa");
   function aplicarTipoGastro(tipo: Exclude<TipoGastro, null>) {
     setTipoGastro(tipo);
     if (tipo === "reventa") {
@@ -483,13 +485,7 @@ export default function NuevoProductoPage() {
             <div className="text-base font-semibold text-slate-900">{summary.titulo}</div>
             <div className="text-sm text-slate-600 mt-0.5">{summary.descripcion}</div>
           </div>
-          <button
-            type="button"
-            onClick={() => setTipoGastro(null)}
-            className="text-xs text-amber-700 hover:text-amber-900 underline shrink-0"
-          >
-            Cambiar tipo
-          </button>
+          {/* Botón "Cambiar tipo" oculto: en esta instancia sólo hay reventa. */}
         </div>
       </div>
 
