@@ -147,7 +147,7 @@ const MENU_STRUCTURE: MenuItem[] = [
     // "Depósitos / Ubicaciones" oculto en instancia En lo de Mari (no aplica para gastronomía).
   ]},
   { key: "clientes", slug: "clientes", label: "Clientes", href: "/clientes", icon: Users },
-  { key: "pagos", slug: "pagos", label: "Pagos", href: "/pagos", icon: Banknote },
+  { key: "pagos", slug: "pagos", label: "Cobros", href: "/pagos", icon: Banknote },
   {
     key: "compras",
     slug: "compras",
