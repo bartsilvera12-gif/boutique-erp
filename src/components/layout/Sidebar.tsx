@@ -818,14 +818,25 @@ export default function Sidebar() {
         ) : (
           seccionesMenu.map((seccion) => {
             const abierta = familiaExpandida(seccion.id) || forzarExpandirFamilias;
+            const seccionActiva = seccion.items.some((it) => isActive(it.slug, it.href));
             return (
               <div key={seccion.id} className="mb-3">
                 <button
                   type="button"
                   onClick={() => toggleFamilia(seccion.id)}
-                  className="mb-1.5 flex w-full items-center justify-between rounded px-3 py-1.5 text-sm font-bold uppercase tracking-wide text-slate-100 transition-colors hover:text-white"
+                  className="group mb-1.5 flex w-full items-center justify-between rounded px-3 py-1.5 text-sm font-bold uppercase tracking-wide text-slate-100 transition-colors hover:text-white"
                 >
-                  <span>{seccion.titulo}</span>
+                  <span className="flex items-center gap-2">
+                    <span
+                      aria-hidden
+                      className={`h-2 w-2 rounded-full transition-colors ${
+                        seccionActiva
+                          ? "bg-[color:var(--zentra-sidebar-accent)]"
+                          : "bg-slate-500/60"
+                      }`}
+                    />
+                    <span>{seccion.titulo}</span>
+                  </span>
                   {abierta ? <ChevronDown className="h-4 w-4 text-slate-300" /> : <ChevronRight className="h-4 w-4 text-slate-300" />}
                 </button>
                 {abierta && (
