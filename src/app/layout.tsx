@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Reserva Ecológica Caacupé",
-  description: "Sistema de gestión Zentra — Reserva Ecológica Caacupé",
+  title: "Autorepuestos Felix Bogado",
+  description: "Sistema de gestión Zentra — Autorepuestos Felix Bogado",
 };
 
 export const viewport: Viewport = {

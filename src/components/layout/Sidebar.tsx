@@ -15,11 +15,10 @@ import {
   UserCog,
   Building2,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   Star,
   Sparkles,
-  PanelLeftClose,
-  PanelLeft,
   Search,
   Receipt,
   Megaphone,
@@ -85,6 +84,27 @@ function adminEmpresasMatchesQuery(queryRaw: string): boolean {
   const label = normalizeMenuSearch("Admin Empresas");
   return label.includes(q) || normalizeMenuSearch("empresas").includes(q);
 }
+
+/**
+ * Keys del menú a ocultar para Autorepuestos Felix Bogado.
+ * No los borro del array para mantener la trazabilidad — sólo los filtro al render.
+ */
+const HIDDEN_MENU_KEYS = new Set<string>([
+  // Omnicanal completo
+  "conversaciones",
+  "conversaciones-finalizadas",
+  "historial-omnicanal",
+  "monitoreo",
+  "campanas",
+  // Marketing y automatización completo
+  "marketing",
+  "marketing_ops",
+  // Otros pedidos
+  "usuarios",
+  "planes",
+  "comisiones",
+  "crm",
+]);
 
 const MENU_STRUCTURE: MenuItem[] = [
   { key: "dashboard", slug: "dashboard", label: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -578,6 +598,7 @@ export default function Sidebar() {
       canAccessSidebarSlug(slug, slugs, esSuperAdmin, inactiveSlugsSet, { strict: strictAllowlist });
     return MENU_STRUCTURE.filter(
       (item) =>
+        !HIDDEN_MENU_KEYS.has(item.key) &&
         favoritos.includes(idForSlug(item.slug)) &&
         access(item.slug) &&
         menuItemMatchesQuery(item, menuSearchQuery)
@@ -591,6 +612,7 @@ export default function Sidebar() {
       canAccessSidebarSlug(slug, slugs, esSuperAdmin, inactiveSlugsSet, { strict: strictAllowlist });
     return MENU_STRUCTURE.filter(
       (item) =>
+        !HIDDEN_MENU_KEYS.has(item.key) &&
         !favoritos.includes(idForSlug(item.slug)) &&
         access(item.slug) &&
         menuItemMatchesQuery(item, menuSearchQuery)
@@ -687,7 +709,7 @@ export default function Sidebar() {
         }`}
       >
       {/* Logo oficial ZENTRA (blanco sobre azul marca) */}
-      <div className="flex h-[7.25rem] shrink-0 items-center justify-between gap-2 border-b border-[color:var(--zentra-sidebar-border)] bg-[color:var(--zentra-sidebar-elevated)]/35 px-3 py-2.5">
+      <div className="flex h-[7.25rem] shrink-0 items-center justify-center border-b border-[color:var(--zentra-sidebar-border)] bg-[color:var(--zentra-sidebar-elevated)]/35 px-3 py-2.5">
         <Link href="/" className={`flex items-center justify-center min-w-0 flex-1 overflow-hidden`}>
           <div
             className={`relative flex items-center justify-center ${collapsed ? "h-11 w-11" : "h-[4.5rem] w-full max-w-[200px]"}`}
@@ -703,15 +725,21 @@ export default function Sidebar() {
             />
           </div>
         </Link>
-        <button
-          type="button"
-          onClick={() => setCollapsed(!collapsed)}
-          className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-[color:var(--zentra-sidebar-hover)] hover:text-white"
-          aria-label={collapsed ? "Expandir sidebar" : "Colapsar sidebar"}
-        >
-          {collapsed ? <PanelLeft className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
-        </button>
       </div>
+
+      {/* Toggle flotante estilo Coolify: pestaña en el borde derecho del
+          sidebar. Posicionado debajo del header global de la app para que no
+          quede tapado por la barra superior. */}
+      <button
+        type="button"
+        onClick={() => setCollapsed(!collapsed)}
+        aria-label={collapsed ? "Expandir sidebar" : "Colapsar sidebar"}
+        title={collapsed ? "Expandir" : "Colapsar"}
+        style={{ backgroundColor: "#104A4E" }}
+        className="absolute top-[8rem] -right-3 z-50 flex h-7 w-7 items-center justify-center rounded-full border border-[color:var(--zentra-sidebar-border)] text-white shadow-[0_4px_10px_rgba(0,0,0,0.35)] transition-transform hover:scale-105"
+      >
+        {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+      </button>
 
       {!collapsed && (
         <div className="shrink-0 border-b border-[color:var(--zentra-sidebar-border)] px-3 py-2.5">
@@ -771,7 +799,11 @@ export default function Sidebar() {
 
         {/* Menú principal agrupado por familias (solo visual) */}
         {cargando ? (
-          <div className="px-3 py-2 text-sm text-slate-500 animate-pulse">Cargando…</div>
+          <div className="space-y-1 px-3 py-2">
+            <div className="h-8 animate-pulse rounded-lg bg-white/[0.04]" />
+            <div className="h-8 animate-pulse rounded-lg bg-white/[0.04]" />
+            <div className="h-8 animate-pulse rounded-lg bg-white/[0.04]" />
+          </div>
         ) : collapsed ? (
           // Colapsado (solo iconos): lista plana, sin títulos de familia.
           <div className="space-y-0.5">
