@@ -4,19 +4,19 @@
  * (evita duplicar el markup del encabezado en cada documento).
  *
  * SOLO presentación: no toca datos de negocio. Los datos comerciales son fijos
- * de la empresa (Reserva Ecológica Caacupé S.A.).
+ * de la empresa (Autorepuestos Felix Bogado).
  */
 
 export const EMPRESA_DOC = {
-  nombre: "Reserva Ecológica Caacupé S.A.",
+  nombre: "Autorepuestos Felix Bogado",
   actividad: [
-    "Comercio al por menor de otros productos en comercios no especializados",
-    "Venta de plantas, bancos, jardinería, otros",
+    "Venta de repuestos y accesorios para vehículos automotores",
   ],
-  telefono: "(0971) 861 676",
-  direccion: ["200 mts. en Sur Club Costa Ñu", "Ruta Pyca - Caacupé", "Cordillera - Paraguay"],
+  telefono: "+595 981 129255",
+  /** Dirección oculta a pedido del cliente (lista vacía → no se renderiza). */
+  direccion: [] as string[],
   /** Logo del cliente (alta calidad, sin fondo). Servido desde /public. */
-  logoUrl: "/brand/reservacaacupe-doc-logo.png",
+  logoUrl: "/brand/logo%20cerrajeria.png",
 };
 
 function esc(v: unknown): string {
@@ -43,7 +43,7 @@ export function membreteA4(origin = ""): string {
       <div style="font-size:14px;font-weight:800;color:#1f2937;">${esc(e.nombre)}</div>
       ${e.actividad.map((a) => `<div style="color:#6b7280;">${esc(a)}</div>`).join("")}
       <div style="margin-top:4px;"><strong>Tel:</strong> ${esc(e.telefono)}</div>
-      <div>${e.direccion.map(esc).join(" · ")}</div>
+      ${e.direccion.length > 0 ? `<div>${e.direccion.map(esc).join(" · ")}</div>` : ""}
     </div>
   </div>`;
 }
@@ -59,7 +59,7 @@ export function membreteTicket(origin = ""): string {
     <img src="${esc(logo)}" alt="${esc(e.nombre)}" style="max-width:150px;max-height:72px;width:auto;height:auto;object-fit:contain;display:inline-block;margin:0 auto 4px;" />
     <div style="font-weight:700;font-size:12px;">${esc(e.nombre)}</div>
     <div style="font-size:10px;">Tel: ${esc(e.telefono)}</div>
-    <div style="font-size:10px;">${esc(e.direccion[0])}</div>
-    <div style="font-size:10px;">${esc(e.direccion.slice(1).join(" · "))}</div>
+    ${e.direccion[0] ? `<div style="font-size:10px;">${esc(e.direccion[0])}</div>` : ""}
+    ${e.direccion.length > 1 ? `<div style="font-size:10px;">${esc(e.direccion.slice(1).join(" · "))}</div>` : ""}
   </div>`;
 }
