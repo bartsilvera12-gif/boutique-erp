@@ -1007,7 +1007,7 @@ function FinMontoGs({
   if (kpi) {
     return (
       <p
-        className={`min-w-0 w-full text-left font-bold leading-none tabular-nums whitespace-nowrap [font-size:clamp(0.65rem,5.5cqi+0.15rem,1.875rem)] ${className}`}
+        className={`min-w-0 w-full text-left text-3xl font-bold leading-none tabular-nums whitespace-nowrap ${className}`}
         title={texto}
       >
         {texto}
@@ -1313,7 +1313,7 @@ const DashFinanciero = memo(function DashFinanciero({
         <motion.div whileHover={{ y: -2 }} className={finKpiCard}>
           <p className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Cobrado del período</p>
           <div className={finKpiValueWrap}>
-            <FinMontoGs kpi monto={recaudadoCohortPeriodo} className="text-[#2563EB]" />
+            <FinMontoGs kpi monto={recaudadoCohortPeriodo} />
           </div>
         </motion.div>
         <motion.div whileHover={{ y: -2 }} className={finKpiCard}>
@@ -1323,13 +1323,6 @@ const DashFinanciero = memo(function DashFinanciero({
               kpi
               monto={carteraPendienteCohort}
               negativo={carteraPendienteCohort < 0}
-              className={
-                carteraPendienteCohort > 0
-                  ? "text-amber-600"
-                  : carteraPendienteCohort < 0
-                    ? "text-emerald-600"
-                    : "text-slate-900"
-              }
             />
           </div>
         </motion.div>
@@ -1337,7 +1330,7 @@ const DashFinanciero = memo(function DashFinanciero({
           <p className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-slate-500">% de cobranza</p>
           <div className={finKpiValueWrap}>
             <p
-              className="min-w-0 w-full text-left font-bold tabular-nums leading-none text-slate-900 whitespace-nowrap [font-size:clamp(0.7rem,5.5cqi+0.15rem,1.5rem)]"
+              className="min-w-0 w-full text-left text-3xl font-bold tabular-nums leading-none text-slate-900 whitespace-nowrap"
               title={pctCobranzaCohort == null ? "—" : `${pctCobranzaCohort.toFixed(1)}%`}
             >
               {pctCobranzaCohort == null ? "—" : `${pctCobranzaCohort.toFixed(1)}%`}
@@ -1618,13 +1611,12 @@ const DashInventario = memo(function DashInventario({
 
       {/* KPIs */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard icon="📦" label="Productos totales"      value={String(totalProductos)} color="text-[#0EA5E9]" variation={4} />
-        <KpiCard icon="🔢" label="Stock total (unidades)" value={formatGs(totalUnidades)} color="text-[#0EA5E9]" />
-        <KpiCard icon="⚠️" label="Bajo stock mínimo"      value={String(bajosStock)}
+        <KpiCard label="Productos totales"      value={String(totalProductos)} variation={4} />
+        <KpiCard label="Stock total (unidades)" value={formatGs(totalUnidades)} />
+        <KpiCard label="Bajo stock mínimo"      value={String(bajosStock)}
           sub={bajosStock > 0 ? "requieren reposición" : "todo en orden"}
-          color={bajosStock > 0 ? "text-red-600" : "text-[#0EA5E9]"}
           variation={bajosStock > 0 ? -2 : undefined} />
-        <KpiCard icon="💎" label="Valor del inventario"   value={`Gs. ${formatGsFull(valorTotal)}`} color="text-[#0EA5E9]" variation={12} />
+        <KpiCard label="Valor del inventario"   value={`Gs. ${formatGsFull(valorTotal)}`} variation={12} />
       </div>
 
       {/* Donut + Críticos */}
@@ -1824,27 +1816,27 @@ const DashVentas = memo(function DashVentas({
 
       {/* KPIs principales */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard icon="📅" label="Ventas del día"    value={`Gs. ${formatGsFull(totalHoy)}`}
-          sub={`${ventasHoy.length} transacciones`} color="text-blue-600" />
-        <KpiCard icon="📆" label="Ventas del mes"    value={`Gs. ${formatGsFull(totalMes)}`}
-          sub={`${ventasMes.length} transacciones`} color="text-indigo-600" />
-        <KpiCard icon="🎫" label="Ticket promedio"   value={`Gs. ${formatGsFull(ticketProm)}`}
+        <KpiCard label="Ventas del día"    value={`Gs. ${formatGsFull(totalHoy)}`}
+          sub={`${ventasHoy.length} transacciones`} />
+        <KpiCard label="Ventas del mes"    value={`Gs. ${formatGsFull(totalMes)}`}
+          sub={`${ventasMes.length} transacciones`} />
+        <KpiCard label="Ticket promedio"   value={`Gs. ${formatGsFull(ticketProm)}`}
           sub={`periodo: ${periodo}`} />
-        <KpiCard icon="📦" label="Unidades vendidas" value={formatGs(unidades)}
+        <KpiCard label="Unidades vendidas" value={formatGs(unidades)}
           sub={`en el periodo`} />
       </div>
 
       {/* KPIs rentabilidad */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <p className={`text-3xl font-bold tabular-nums ${gananciaHoy >= 0 ? "text-green-600" : "text-red-600"}`}>
+          <p className="text-3xl font-bold tabular-nums text-slate-900">
             Gs. {formatGsFull(gananciaHoy)}
           </p>
           <p className="text-xs font-semibold text-gray-700 mt-0.5">Ganancia del día</p>
           <p className="text-xs text-gray-400">precio venta − costo promedio × cant.</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <p className={`text-3xl font-bold tabular-nums ${margenProm >= 20 ? "text-green-600" : margenProm >= 10 ? "text-amber-600" : "text-red-600"}`}>
+          <p className="text-3xl font-bold tabular-nums text-slate-900">
             {margenProm.toFixed(1)}%
           </p>
           <p className="text-xs font-semibold text-gray-700 mt-0.5">Margen promedio (hoy)</p>
