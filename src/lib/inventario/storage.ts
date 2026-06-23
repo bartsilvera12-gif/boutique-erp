@@ -302,6 +302,16 @@ export async function updateProducto(
     body.tiempo_prep_minutos = datos.tiempo_prep_minutos;
   if (datos.descripcion !== undefined) body.descripcion = datos.descripcion;
   if (datos.modo_receta !== undefined) body.modo_receta = datos.modo_receta;
+  // Autopartes (Fase 1)
+  if (datos.codigo_oem !== undefined) body.codigo_oem = datos.codigo_oem ?? null;
+  if (datos.codigo_alternativo !== undefined) body.codigo_alternativo = datos.codigo_alternativo ?? null;
+  if (datos.marca_repuesto !== undefined) body.marca_repuesto = datos.marca_repuesto ?? null;
+  if (datos.garantia_meses !== undefined) body.garantia_meses = datos.garantia_meses ?? null;
+  if (typeof datos.permitir_venta_sin_stock === "boolean") body.permitir_venta_sin_stock = datos.permitir_venta_sin_stock;
+  if (datos.ubicacion_deposito !== undefined) body.ubicacion_deposito = datos.ubicacion_deposito ?? null;
+  if (datos.ubicacion_pasillo !== undefined) body.ubicacion_pasillo = datos.ubicacion_pasillo ?? null;
+  if (datos.ubicacion_estante !== undefined) body.ubicacion_estante = datos.ubicacion_estante ?? null;
+  if (datos.ubicacion_caja !== undefined) body.ubicacion_caja = datos.ubicacion_caja ?? null;
 
   const res = await fetch(`/api/productos/${encodeURIComponent(id)}`, {
     method: "PATCH",
