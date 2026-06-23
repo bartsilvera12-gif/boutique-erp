@@ -238,30 +238,11 @@ export default function InventarioPage() {
         </div>
       </div>
 
-      {/* Tabs gastronómicos (filtran por tipo de producto) */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex gap-6 overflow-x-auto" aria-label="Tabs">
-          {([
-            { id: "reventa", label: "Reventa", subtitle: "Productos comprados y revendidos" },
-            { id: "menu",    label: "Menú",    subtitle: "Productos preparados por el local" },
-            { id: "materia", label: "Materia prima", subtitle: "Insumos para costeo/recetas" },
-          ] as const).map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id)}
-              className={`whitespace-nowrap border-b-2 py-2 px-1 text-sm font-medium transition-colors ${
-                tab === t.id
-                  ? "border-amber-500 text-amber-600"
-                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-              }`}
-              title={t.subtitle}
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
-      </div>
+      {/* Tabs gastronómicos ocultos en esta instancia: en Autorepuestos
+          Felix Bogado todos los productos son de reventa, por lo que el
+          tab fijo en "reventa" (state init) muestra todo lo relevante.
+          Mantengo el state para no romper los useMemo / filtros aguas
+          abajo que dependen de `tab`. */}
 
       {/* Resumen por pestaña */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

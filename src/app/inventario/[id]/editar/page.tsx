@@ -431,30 +431,9 @@ export default function EditarProductoPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 max-w-5xl">
-        <p className="text-xs uppercase tracking-wide font-semibold text-gray-500 mb-3">Tipo de producto</p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {(["reventa", "materia", "menu"] as TipoGastro[]).map((t) => {
-            const s = TIPO_SUMMARY[t];
-            const activo = tipoGastro === t;
-            const Icon = s.Icon;
-            return (
-              <button
-                key={t}
-                type="button"
-                onClick={() => aplicarTipoGastro(t)}
-                className={`text-left rounded-lg border-2 p-3 transition-all ${
-                  activo ? "border-[#4FAEB2] bg-[#4FAEB2]/[0.06] shadow-sm" : "border-slate-200 hover:border-slate-300"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Icon className={`w-5 h-5 ${activo ? s.acento : "text-slate-400"}`} />
-                  <span className="text-sm font-semibold text-slate-900">{s.titulo}</span>
-                </div>
-                <p className="mt-1.5 text-xs text-slate-500 leading-snug">{s.descripcion}</p>
-              </button>
-            );
-          })}
-        </div>
+        {/* Selector "Tipo de producto" oculto en esta instancia: en
+            Autorepuestos Felix Bogado todos los productos son de reventa.
+            tipoGastro se mantiene fijo en "reventa" (state init). */}
 
         {/* Advertencia: el producto tiene receta y se lo saca de Menú */}
         {tieneReceta && tipoGastro !== "menu" && (
