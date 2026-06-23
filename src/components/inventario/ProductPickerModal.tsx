@@ -85,7 +85,7 @@ function formatGs(v: number): string {
 }
 
 export default function ProductPickerModal({
-  open, onClose, onAgregar, excludeIds = [], moneda = "GS", tipoCambio = 1, ivaDefault = "10%",
+  open, onClose, onAgregar, excludeIds = [], moneda = "GS", tipoCambio = 1, ivaDefault = "EXENTA",
 }: Props) {
   const [q, setQ] = useState("");
   const [items, setItems] = useState<ProductoPickerItem[]>([]);
