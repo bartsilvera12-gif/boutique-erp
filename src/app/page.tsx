@@ -565,7 +565,7 @@ function KpiCard({
           </span>
         )}
       </div>
-      <p className={`mt-3 text-2xl xl:text-3xl font-bold tabular-nums leading-tight tracking-tight ${color}`}>{value}</p>
+      <p className={`mt-3 text-3xl font-bold tabular-nums leading-tight tracking-tight ${color}`}>{value}</p>
       <p className="mt-1 text-xs font-medium text-[#475569]">{label}</p>
       {sub && <p className="mt-1 text-xs text-[#475569]">{sub}</p>}
     </motion.div>
