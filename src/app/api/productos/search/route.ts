@@ -27,6 +27,10 @@ interface ProductoSearchHit {
   es_vendible: boolean;
   controla_stock: boolean;
   modo_receta: string;
+  // Autopartes
+  codigo_oem: string | null;
+  codigo_alternativo: string | null;
+  marca_repuesto: string | null;
 }
 
 const DEFAULT_LIMIT = 30;
@@ -66,15 +70,41 @@ export async function GET(request: NextRequest) {
           "precio_venta, precio_mayorista, precio_distribuidor, costo_promedio, stock_actual, stock_minimo, " +
           "unidad_medida, metodo_valuacion, imagen_path, imagen_url, " +
           "categoria_principal_id, proveedor_principal_id, ubicacion_principal_id, " +
-          "es_vendible, controla_stock, modo_receta, activo"
+          "es_vendible, controla_stock, modo_receta, activo, " +
+          // Autopartes (Fase 1)
+          "codigo_oem, codigo_alternativo, marca_repuesto"
       )
       .eq("empresa_id", empresaId)
       .eq("activo", true)
       .eq("es_vendible", true);
 
+    // Si vino ?vehiculo=<texto> filtramos por compatibilidad — el texto se matchea
+    // contra marca_vehiculo o modelo_vehiculo de producto_compatibilidad_vehiculo.
+    // Resolución previa para construir el IN (...).
+    const vehiculoRaw = (url.searchParams.get("vehiculo") ?? "").trim();
+    if (vehiculoRaw.length > 0) {
+      const vPat = `%${escapeIlikePattern(vehiculoRaw)}%`;
+      const compat = await supabase
+        .from("producto_compatibilidad_vehiculo")
+        .select("producto_id")
+        .eq("empresa_id", empresaId)
+        .or(`marca_vehiculo.ilike.${vPat},modelo_vehiculo.ilike.${vPat}`);
+      if (compat.error) throw new Error(compat.error.message);
+      const ids = Array.from(new Set((compat.data ?? []).map((r) => String((r as { producto_id: string }).producto_id))));
+      if (ids.length === 0) {
+        // Sin matches → corto temprano con resultados vacíos.
+        return NextResponse.json(successResponse({ items: [], count: 0, q, vehiculo: vehiculoRaw }));
+      }
+      query = query.in("id", ids);
+    }
+
     if (q.length > 0) {
       const pat = `%${escapeIlikePattern(q)}%`;
-      query = query.or(`nombre.ilike.${pat},sku.ilike.${pat},codigo_barras.ilike.${pat}`);
+      // Búsqueda case-insensitive en nombre, sku, codigo_barras + autopartes (oem/alt/marca).
+      query = query.or(
+        `nombre.ilike.${pat},sku.ilike.${pat},codigo_barras.ilike.${pat},` +
+          `codigo_oem.ilike.${pat},codigo_alternativo.ilike.${pat},marca_repuesto.ilike.${pat}`
+      );
     }
 
     query = query.order("nombre").limit(limit);
@@ -102,6 +132,9 @@ export async function GET(request: NextRequest) {
       es_vendible: r.es_vendible !== false,
       controla_stock: r.controla_stock !== false,
       modo_receta: typeof r.modo_receta === "string" ? r.modo_receta : "preparado_al_vender",
+      codigo_oem: (r.codigo_oem as string | null) ?? null,
+      codigo_alternativo: (r.codigo_alternativo as string | null) ?? null,
+      marca_repuesto: (r.marca_repuesto as string | null) ?? null,
     }));
 
     // Firmar URLs solo para los primeros 20 visibles (optimización).
@@ -135,9 +168,12 @@ export async function GET(request: NextRequest) {
       es_vendible: r.es_vendible,
       controla_stock: r.controla_stock,
       modo_receta: r.modo_receta,
+      codigo_oem: r.codigo_oem,
+      codigo_alternativo: r.codigo_alternativo,
+      marca_repuesto: r.marca_repuesto,
     }));
 
-    return NextResponse.json(successResponse({ items: hits, count: hits.length, q }));
+    return NextResponse.json(successResponse({ items: hits, count: hits.length, q, vehiculo: vehiculoRaw || null }));
   } catch (err) {
     console.error("[/api/productos/search]", err instanceof Error ? err.message : err);
     return NextResponse.json(
