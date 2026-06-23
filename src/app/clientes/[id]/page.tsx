@@ -954,37 +954,42 @@ export default function ClienteDetailPage() {
       </button>
 
       {/* ── Panel resumen ─────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="bg-gradient-to-r from-[#0EA5E9] to-[#0284C7] px-6 py-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              {/* Avatar */}
-              <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-xl font-bold text-white shrink-0 ${
-                cliente.tipo_cliente === "empresa" ? "bg-blue-500/80" : "bg-violet-500/80"
-              }`}>
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-gradient-to-b from-[#E5F4F4]/40 to-white px-6 py-5">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex items-start gap-4 min-w-0 flex-1">
+              {/* Avatar — fondo soft teal, sin colores chillones */}
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center text-lg font-bold text-[#3F8E91] bg-[#E5F4F4] border border-[#4FAEB2]/30 shrink-0">
                 {nombre.slice(0, 2).toUpperCase()}
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-white leading-tight">{nombre}</h1>
-                <div className="flex items-center gap-3 mt-1 flex-wrap">
-                  <span className="text-gray-300 font-mono text-xs">{cliente.codigo_cliente}</span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-[#3F8E91] flex items-center gap-1.5">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#4FAEB2]" />
+                  Cliente
+                </p>
+                <h1 className="text-2xl font-bold text-slate-900 leading-tight mt-1">{nombre}</h1>
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <span className="font-mono text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                    {cliente.codigo_cliente}
+                  </span>
                   {cliente.ruc && (
-                    <span className="text-gray-300 text-xs">RUC: {cliente.ruc}</span>
+                    <span className="text-xs text-slate-500">RUC: <span className="text-slate-700 font-medium">{cliente.ruc}</span></span>
                   )}
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${
                     cliente.estado === "activo"
-                      ? "bg-green-500/20 text-green-300"
-                      : "bg-gray-500/30 text-gray-300"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-slate-100 text-slate-600"
                   }`}>
-                    ● {cliente.estado === "activo" ? "Activo" : "Inactivo"}
+                    <span className={`inline-block w-1.5 h-1.5 rounded-full ${cliente.estado === "activo" ? "bg-green-500" : "bg-slate-400"}`} />
+                    {cliente.estado === "activo" ? "Activo" : "Inactivo"}
                   </span>
                   {cliente.perfil_tributario_activo && (
-                    <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-white/15 text-white border border-white/25">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#E5F4F4] text-[#3F8E91] border border-[#4FAEB2]/30">
                       Tributario
                     </span>
                   )}
-                  <span className="text-xs text-gray-400">
-                    Cliente desde {formatFecha(cliente.created_at)}
+                  <span className="text-xs text-slate-500">
+                    Cliente desde <span className="font-medium text-slate-700">{formatFecha(cliente.created_at)}</span>
                   </span>
                 </div>
               </div>
@@ -995,14 +1000,14 @@ export default function ClienteDetailPage() {
                 esAdmin ? (
                   <button
                     onClick={abrirModalBajaOperativa}
-                    className="text-xs font-medium border border-amber-400/60 text-amber-200 hover:bg-amber-500/20 px-3 py-1.5 rounded-lg transition-colors"
+                    className="text-xs font-medium border border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-colors"
                   >
-                    Dar de baja cliente
+                    Dar de baja
                   </button>
                 ) : (
                   <button
                     onClick={handleToggleEstado}
-                    className="text-xs font-medium border border-white/20 text-white/80 hover:bg-white/10 px-3 py-1.5 rounded-lg transition-colors"
+                    className="text-xs font-medium border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-lg transition-colors"
                   >
                     Desactivar
                   </button>
@@ -1010,7 +1015,7 @@ export default function ClienteDetailPage() {
               ) : (
                 <button
                   onClick={handleToggleEstado}
-                  className="text-xs font-medium border border-white/20 text-white/80 hover:bg-white/10 px-3 py-1.5 rounded-lg transition-colors"
+                  className="text-xs font-medium border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-lg transition-colors"
                 >
                   Reactivar
                 </button>
@@ -1019,10 +1024,10 @@ export default function ClienteDetailPage() {
                 <button
                   type="button"
                   onClick={() => void abrirModalEliminar()}
-                  className="text-red-200 hover:text-white hover:bg-red-900/40 border border-red-400/40 flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-colors text-xs font-medium"
+                  className="text-xs font-medium border border-rose-300 text-rose-700 bg-rose-50 hover:bg-rose-100 flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors"
                   title="Eliminar cliente (baja lógica)"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 shrink-0" aria-hidden>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 shrink-0" aria-hidden>
                     <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clipRule="evenodd" />
                   </svg>
                   Eliminar
@@ -1030,7 +1035,7 @@ export default function ClienteDetailPage() {
               )}
             </div>
           </div>
-          <div className="mt-4 pt-4 border-t border-white/15 flex flex-wrap gap-2">
+          <div className="mt-4 pt-4 border-t border-slate-200 flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => {
@@ -1045,9 +1050,9 @@ export default function ClienteDetailPage() {
                 });
                 setModalSuscripcion(true);
               }}
-              className="text-xs font-medium bg-white/15 hover:bg-white/25 text-white border border-white/30 px-3 py-1.5 rounded-lg transition-colors"
+              className="text-xs font-semibold bg-[#4FAEB2] hover:bg-[#3F8E91] text-white inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors"
             >
-              Nueva suscripción
+              <span className="text-base leading-none">+</span> Nueva suscripción
             </button>
             <button
               type="button"
@@ -1056,14 +1061,14 @@ export default function ClienteDetailPage() {
                 setErrorFacturaContado(null);
                 setModalFacturaContado(true);
               }}
-              className="text-xs font-medium bg-white/15 hover:bg-white/25 text-white border border-white/30 px-3 py-1.5 rounded-lg transition-colors"
+              className="text-xs font-medium border border-[#4FAEB2] text-[#3F8E91] bg-white hover:bg-[#E5F4F4] px-3 py-1.5 rounded-lg transition-colors"
             >
               Factura al contado
             </button>
             <button
               type="button"
               onClick={abrirRegistrarPago}
-              className="text-xs font-medium bg-white/15 hover:bg-white/25 text-white border border-white/30 px-3 py-1.5 rounded-lg transition-colors"
+              className="text-xs font-medium border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 px-3 py-1.5 rounded-lg transition-colors"
             >
               Registrar pago
             </button>
