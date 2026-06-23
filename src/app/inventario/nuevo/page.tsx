@@ -52,6 +52,7 @@ export default function NuevoProductoPage() {
     garantia_meses: "",
     distribuidor_nombre: "",
     distribuidor_comision_pct: "",
+    departamento: "",
   });
   const [permitirVentaSinStock, setPermitirVentaSinStock] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -362,6 +363,8 @@ export default function NuevoProductoPage() {
           permitir_venta_sin_stock: permitirVentaSinStock,
           distribuidor_nombre: form.distribuidor_nombre.trim() || null,
           distribuidor_comision_pct: form.distribuidor_comision_pct.trim() === "" ? null : Math.min(Math.max(parseFloat(form.distribuidor_comision_pct) || 0, 0), 100),
+          // Departamento → se mapea a ubicacion_deposito (columna existente en DB).
+          ubicacion_deposito: form.departamento.trim() || null,
         });
       } catch (err) {
         console.error("[inventario/nuevo] saveProducto error:", err);
@@ -1138,6 +1141,17 @@ export default function NuevoProductoPage() {
                   />
                   Permitir vender aún sin stock disponible
                 </label>
+              </div>
+              <div className="sm:col-span-2">
+                <label className={labelClass}>Departamento <span className="text-gray-400 font-normal">(ubicación física)</span></label>
+                <input
+                  type="text"
+                  name="departamento"
+                  value={form.departamento}
+                  onChange={handleChange}
+                  placeholder="ej. PLAZA Q5, plaza F3"
+                  className={inputClass}
+                />
               </div>
               <div className="sm:col-span-2 pt-2">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Distribuidor</p>
