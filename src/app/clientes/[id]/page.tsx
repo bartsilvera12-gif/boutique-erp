@@ -59,6 +59,7 @@ import {
 } from "@/components/clientes/ClientePerfilTributarioForm";
 import { ClienteDatosSifenReceptorForm } from "@/components/clientes/ClienteDatosSifenReceptorForm";
 import { NEURA_CLIENT_SCHEMA } from "@/lib/supabase/schema";
+import ClienteVehiculoEditor from "@/components/clientes/ClienteVehiculoEditor";
 
 /** Instancia monocliente Reserva: formulario/detalle de clientes simplificado (sin campos SaaS/Neura). */
 const SIMPLE_CLIENTE = NEURA_CLIENT_SCHEMA === "reservacaacupe";
@@ -78,10 +79,11 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 // ── Tipos de pestaña ──────────────────────────────────────────────────────────
 
-type TabId = "informacion" | "estado_cuenta" | "suscripciones" | "marketing" | "proyectos" | "actividad" | "notas";
+type TabId = "informacion" | "vehiculos" | "estado_cuenta" | "suscripciones" | "marketing" | "proyectos" | "actividad" | "notas";
 
 const TABS: { id: TabId; label: string; showWhen?: (c: Cliente) => boolean }[] = [
   { id: "informacion",   label: "Información"      },
+  { id: "vehiculos",     label: "Vehículos"        },
   { id: "estado_cuenta", label: "Estado de cuenta" },
   { id: "suscripciones", label: "Suscripciones"    },
   { id: "marketing",     label: "Marketing",        showWhen: (c) => c.tipo_servicio_cliente === "marketing" },
@@ -1949,6 +1951,13 @@ export default function ClienteDetailPage() {
                 </button>
               </div>
             </form>
+          )}
+
+          {/* ── VEHÍCULOS (rubro autopartes) ─────────────────────────────── */}
+          {activeTab === "vehiculos" && cliente && (
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
+              <ClienteVehiculoEditor clienteId={cliente.id} />
+            </div>
           )}
 
           {/* ── ESTADO DE CUENTA ─────────────────────────────────────────── */}
