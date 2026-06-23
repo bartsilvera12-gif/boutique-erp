@@ -500,7 +500,7 @@ function KpiCard({
   label,
   value,
   sub,
-  color = "text-[#0F172A]",
+  color = "text-[#4FAEB2]",
   variation,
   variant = "light",
 }: {
@@ -989,7 +989,7 @@ const DashComercial = memo(function DashComercial({
  */
 function FinMontoGs({
   monto,
-  className = "text-slate-900",
+  className = "text-[#4FAEB2]",
   negativo,
   dense,
   kpi,
@@ -1330,7 +1330,7 @@ const DashFinanciero = memo(function DashFinanciero({
           <p className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-slate-500">% de cobranza</p>
           <div className={finKpiValueWrap}>
             <p
-              className="min-w-0 w-full text-left text-3xl font-bold tabular-nums leading-none text-slate-900 whitespace-nowrap"
+              className="min-w-0 w-full text-left text-3xl font-bold tabular-nums leading-none text-[#4FAEB2] whitespace-nowrap"
               title={pctCobranzaCohort == null ? "—" : `${pctCobranzaCohort.toFixed(1)}%`}
             >
               {pctCobranzaCohort == null ? "—" : `${pctCobranzaCohort.toFixed(1)}%`}
@@ -1829,14 +1829,14 @@ const DashVentas = memo(function DashVentas({
       {/* KPIs rentabilidad */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <p className="text-3xl font-bold tabular-nums text-slate-900">
+          <p className="text-3xl font-bold tabular-nums text-[#4FAEB2]">
             Gs. {formatGsFull(gananciaHoy)}
           </p>
           <p className="text-xs font-semibold text-gray-700 mt-0.5">Ganancia del día</p>
           <p className="text-xs text-gray-400">precio venta − costo promedio × cant.</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <p className="text-3xl font-bold tabular-nums text-slate-900">
+          <p className="text-3xl font-bold tabular-nums text-[#4FAEB2]">
             {margenProm.toFixed(1)}%
           </p>
           <p className="text-xs font-semibold text-gray-700 mt-0.5">Margen promedio (hoy)</p>
