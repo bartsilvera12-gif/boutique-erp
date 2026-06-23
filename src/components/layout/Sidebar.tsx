@@ -99,6 +99,7 @@ const ALLOWED_MENU_KEYS = new Set<string>([
   "reportes",
   "configuracion",
   "inventario",
+  "compras",
 ]);
 
 const MENU_STRUCTURE: MenuItem[] = [
