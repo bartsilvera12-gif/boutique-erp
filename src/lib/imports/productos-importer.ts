@@ -46,6 +46,10 @@ export interface ProductoParsed {
   errors: string[];
   warnings: string[];
   match_id?: string | null;
+  /** Marca puesta por buildPreview cuando otra fila más arriba ya usó el
+   *  mismo SKU. La fila se omite en commitProductos sin generar UPDATE,
+   *  INSERT ni movimiento. */
+  duplicado_en_archivo?: boolean;
 }
 
 /**
@@ -189,16 +193,28 @@ export function buildPreview(parsed: ProductoParsed[], maps: ResolverMaps): Prev
   const ubisFaltantes = new Set<string>();
   let insertar = 0, actualizar = 0, errores = 0, warnings = 0;
   let totalEntrada = 0, totalSalida = 0, movimientosGenerar = 0;
-  const omitir = 0;
+  let omitir = 0;
   const skuVistos = new Set<string>();
   const codbarVistos = new Set<string>();
 
   const rows: PreviewRow[] = parsed.map((p) => {
-    // Errores fila
-    if (p.sku && skuVistos.has(p.sku)) p.errors.push(`SKU "${p.sku}" duplicado en el archivo.`);
+    // Duplicados dentro del archivo: la primera ocurrencia se procesa
+    // normalmente, las siguientes se OMITEN con un warning (no error).
+    // Antes era ERROR y bloqueaba ~100 filas legítimas en imports
+    // grandes donde el mismo SKU aparece con códigos de barras de
+    // múltiples proveedores.
+    let duplicadoEnArchivo = false;
+    if (p.sku && skuVistos.has(p.sku)) {
+      p.warnings.push(`SKU "${p.sku}" repetido en el archivo — se omite (la primera ocurrencia queda registrada).`);
+      duplicadoEnArchivo = true;
+    }
     if (p.sku) skuVistos.add(p.sku);
-    if (p.codigo_barras && codbarVistos.has(p.codigo_barras)) p.errors.push(`Código de barras "${p.codigo_barras}" duplicado en el archivo.`);
+    if (p.codigo_barras && codbarVistos.has(p.codigo_barras)) {
+      p.warnings.push(`Código de barras "${p.codigo_barras}" repetido en el archivo — se omite.`);
+      duplicadoEnArchivo = true;
+    }
     if (p.codigo_barras) codbarVistos.add(p.codigo_barras);
+    p.duplicado_en_archivo = duplicadoEnArchivo;
 
     // Match contra DB existente
     let matchId: string | null = null;
@@ -227,10 +243,15 @@ export function buildPreview(parsed: ProductoParsed[], maps: ResolverMaps): Prev
     }
 
     const hasErr = p.errors.length > 0;
-    const action = hasErr ? "ERROR" : matchId ? "UPDATE" : "INSERT";
+    const action: "INSERT" | "UPDATE" | "ERROR" | "SKIP" =
+      hasErr ? "ERROR"
+      : duplicadoEnArchivo ? "SKIP"
+      : matchId ? "UPDATE"
+      : "INSERT";
     if (action === "INSERT") insertar++;
     else if (action === "UPDATE") actualizar++;
     else if (action === "ERROR") errores++;
+    else if (action === "SKIP") omitir++;
     if (p.warnings.length > 0) warnings++;
 
     // Calcular impacto de stock que se generara
@@ -415,6 +436,7 @@ export async function commitProductos(
   for (const chunk of chunked(parsed, 200)) {
     await Promise.all(chunk.map(async (p) => {
       if (p.errors.length > 0) { out.errors++; out.errorMessages.push(`Fila ${p.row_number}: ${p.errors.join("; ")}`); return; }
+      if (p.duplicado_en_archivo) { out.skipped++; return; }
       const categoriaId = p.categoria_nombre ? maps.categoriasByName.get(p.categoria_nombre) ?? null : null;
       const proveedorId = p.proveedor_nombre ? maps.proveedoresByName.get(p.proveedor_nombre) ?? null : null;
       const ubicacionId = p.ubicacion_nombre
