@@ -6,7 +6,6 @@ import MontoInput from "@/components/ui/MontoInput";
 import ProductPickerModal, { type ProductoPickerItem, type AgregarVentaPayload } from "@/components/inventario/ProductPickerModal";
 import { saveVenta, type FaltanteStock } from "@/lib/ventas/storage";
 import { getProductos } from "@/lib/inventario/storage";
-import { generarYAbrirRecibo } from "@/lib/recibos/client";
 import type { TipoIvaVenta, TipoVenta, MonedaVenta, LineaVenta, MetodoPago, TipoPrecioVenta } from "@/lib/ventas/types";
 import type { Producto } from "@/lib/inventario/types";
 
@@ -119,8 +118,6 @@ export default function NuevaVentaPage() {
   // Venta sin stock: faltantes devueltos por el backend + modal de confirmación.
   const [faltantes, setFaltantes] = useState<FaltanteStock[]>([]);
   const [confirmSinStockOpen, setConfirmSinStockOpen] = useState(false);
-  // Panel post-venta: tras confirmar, ofrece abrir ticket y (si aplica) nota de remisión.
-  const [postVenta, setPostVenta] = useState<{ id: string; numero: string; generaNota: boolean; credito: boolean } | null>(null);
   // Guard anti doble-submit: estado para UI (botón/spinner) + ref para bloqueo síncrono
   // inmediato (React puede tardar en aplicar el estado; el ref corta el segundo disparo ya).
   const [guardando, setGuardando] = useState(false);
@@ -616,9 +613,11 @@ export default function NuevaVentaPage() {
       // segunda pestaña puede ser bloqueada por el navegador → fallback con botones).
       try { window.open(ticketUrl, "_blank", "noopener"); } catch {}
       if (generaNota) { try { window.open(remisionUrl, "_blank", "noopener"); } catch {} }
-      // Panel post-venta: botones siempre disponibles aunque el popup se bloquee.
-      // NOTA: abrir el ticket / la nota / el panel NO vuelve a llamar saveVenta.
-      setPostVenta({ id: v.id, numero: v.numero_control, generaNota, credito: tipoVenta === "CREDITO" });
+      // Pedido del cliente: al guardar, redirigir directo a /ventas sin
+      // pasar por el modal de confirmación. El ticket se abre solo por el
+      // window.open de arriba (gesto del click). Si el navegador bloquea
+      // popups, se pierde — el usuario lo puede reimprimir desde el listado.
+      router.push("/ventas");
     } finally {
       // Liberar el guard SIEMPRE: éxito, error o flujo de "confirmar sin stock".
       isSubmittingRef.current = false;
@@ -1110,70 +1109,6 @@ export default function NuevaVentaPage() {
         </div>
       )}
 
-      {/* Panel post-venta: abrir ticket y (si aplica) nota de remisión */}
-      {postVenta && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl space-y-4 text-center">
-            <div className="text-3xl">✅</div>
-            <div>
-              <h3 className="text-base font-semibold text-slate-800">Venta {postVenta.numero} registrada</h3>
-              {postVenta.credito && (
-                <p className="mt-1 text-sm font-medium text-amber-700">Venta a crédito registrada. Cuenta por cobrar generada.</p>
-              )}
-              {postVenta.generaNota && (
-                <p className="mt-1 text-sm text-sky-700">Esta venta genera nota de remisión.</p>
-              )}
-              <p className="mt-1 text-xs text-gray-400">
-                Si tu navegador bloqueó las pestañas, abrí los documentos con estos botones.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-2">
-              <a
-                href={`/api/ventas/${postVenta.id}/ticket?mode=comandas&auto=1`}
-                target="_blank"
-                rel="noopener"
-                className="rounded-lg bg-[#0EA5E9] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#0284C7]"
-              >
-                Abrir ticket
-              </a>
-              {postVenta.generaNota && (
-                <a
-                  href={`/api/ventas/${postVenta.id}/ticket?tipo=remision&auto=1`}
-                  target="_blank"
-                  rel="noopener"
-                  className="rounded-lg border border-sky-300 bg-sky-50 px-4 py-2.5 text-sm font-medium text-sky-700 hover:bg-sky-100"
-                >
-                  Abrir nota de remisión
-                </a>
-              )}
-              {/* Recibo de dinero solo para venta contado (en crédito el recibo sale al cobrar). */}
-              {!postVenta.credito && (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const r = await generarYAbrirRecibo({ origen: "venta_contado", venta_id: postVenta.id });
-                    if (!r.ok) setErrorVenta(r.error ?? "No se pudo generar el recibo.");
-                  }}
-                  className="rounded-lg border border-[#4FAEB2]/40 bg-[#4FAEB2]/[0.08] px-4 py-2.5 text-sm font-medium text-[#3F8E91] hover:bg-[#4FAEB2]/[0.16]"
-                >
-                  Generar recibo de dinero
-                </button>
-              )}
-            </div>
-
-            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-center pt-1">
-              <button
-                type="button"
-                onClick={() => { setPostVenta(null); router.push("/ventas"); }}
-                className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
-              >
-                Ir a ventas
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
