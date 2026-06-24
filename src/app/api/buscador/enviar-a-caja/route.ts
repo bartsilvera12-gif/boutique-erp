@@ -32,12 +32,17 @@ interface Body {
   items: BodyItem[];
 }
 
+/**
+ * Schema real de proyecto_tipos en este tenant:
+ *   id, empresa_id, nombre, codigo (NOT NULL), descripcion, config (jsonb NOT NULL),
+ *   activo, created_at, updated_at. (No tiene `slug` ni `orden`.)
+ */
 async function ensureTipoBuscador(sb: AppSupabaseClient, empresaId: string): Promise<string> {
   const existing = await sb
     .from("proyecto_tipos")
     .select("id")
     .eq("empresa_id", empresaId)
-    .eq("slug", "buscador")
+    .eq("codigo", "buscador")
     .limit(1)
     .maybeSingle();
   if (existing.data) return String((existing.data as { id: string }).id);
@@ -47,9 +52,10 @@ async function ensureTipoBuscador(sb: AppSupabaseClient, empresaId: string): Pro
     .insert({
       empresa_id: empresaId,
       nombre: "Buscador",
-      slug: "buscador",
+      codigo: "buscador",
+      descripcion: "Pedidos armados desde el módulo Consulta y enviados a caja.",
+      config: {},
       activo: true,
-      orden: 99,
     })
     .select("id")
     .single();
@@ -57,14 +63,19 @@ async function ensureTipoBuscador(sb: AppSupabaseClient, empresaId: string): Pro
   return String((ins.data as { id: string }).id);
 }
 
+/**
+ * Schema real de proyecto_estados:
+ *   id, empresa_id, nombre, codigo, color, sort_order, cuenta_sla, tipo_sla,
+ *   sla_horas_objetivo, es_estado_inicial, es_estado_final, activo, …
+ * NO tiene `orden` (usa `sort_order`) ni `slug` (usa `codigo`).
+ */
 async function ensureEstadoPendiente(sb: AppSupabaseClient, empresaId: string): Promise<string> {
-  // Buscar estado inicial existente; si no hay ninguno, crear "Pendiente".
   const ex = await sb
     .from("proyecto_estados")
     .select("id")
     .eq("empresa_id", empresaId)
     .eq("activo", true)
-    .order("orden", { ascending: true })
+    .order("sort_order", { ascending: true })
     .limit(1)
     .maybeSingle();
   if (ex.data) return String((ex.data as { id: string }).id);
@@ -74,11 +85,14 @@ async function ensureEstadoPendiente(sb: AppSupabaseClient, empresaId: string): 
     .insert({
       empresa_id: empresaId,
       nombre: "Pendiente",
+      codigo: "pendiente",
       color: "#f59e0b",
-      orden: 1,
-      es_estado_inicial: true,
-      activo: true,
+      sort_order: 1,
+      cuenta_sla: false,
       tipo_sla: "abierto",
+      es_estado_inicial: true,
+      es_estado_final: false,
+      activo: true,
     })
     .select("id")
     .single();
