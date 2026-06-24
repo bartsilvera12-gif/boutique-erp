@@ -260,13 +260,19 @@ function NavItem({
   const childActive = item.children?.some((c) => menuChildPathActive(p, c.href, c.exactMatch));
 
   if (item.children) {
-    const rowTone =
-      isActive || childActive
-        ? "bg-[color:var(--zentra-sidebar-active)] text-white shadow-[inset_3px_0_0_var(--zentra-sidebar-accent)]"
-        : "text-slate-200 hover:bg-[color:var(--zentra-sidebar-hover)]";
+    const activo = isActive || childActive;
+    const rowTone = activo
+      ? "bg-[color:var(--zentra-sidebar-active)] text-white"
+      : "text-slate-200 hover:bg-[color:var(--zentra-sidebar-hover)]";
     return (
       <div className="space-y-0.5">
-        <div className={`flex items-center gap-0.5 rounded-lg text-sm font-medium transition-colors ${rowTone}`}>
+        <div className={`relative flex items-center gap-0.5 rounded-lg text-sm font-medium transition-colors ${rowTone}`}>
+          {activo && (
+            <span
+              aria-hidden
+              className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-[#7DCFD2] shadow-[0_0_12px_rgba(125,207,210,0.7)]"
+            />
+          )}
           <Link
             href={item.href}
             prefetch={false}
@@ -313,12 +319,18 @@ function NavItem({
                   href={c.href}
                   prefetch={false}
                   onMouseEnter={() => router.prefetch(c.href)}
-                  className={`block rounded-lg px-3 py-2 text-sm transition-all ${
+                  className={`relative block rounded-lg px-3 py-2 text-sm transition-all ${
                     menuChildPathActive(p, c.href, c.exactMatch)
-                      ? "bg-[color:var(--zentra-sidebar-active)] text-white font-medium shadow-[inset_3px_0_0_var(--zentra-sidebar-accent)]"
+                      ? "bg-[color:var(--zentra-sidebar-active)] text-white font-medium"
                       : "text-slate-300 hover:bg-[color:var(--zentra-sidebar-hover)]"
                   }`}
                 >
+                  {menuChildPathActive(p, c.href, c.exactMatch) && (
+                    <span
+                      aria-hidden
+                      className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-[#7DCFD2] shadow-[0_0_12px_rgba(125,207,210,0.7)]"
+                    />
+                  )}
                   {c.label}
                 </Link>
               ))}
@@ -334,12 +346,18 @@ function NavItem({
       href={item.href}
       prefetch={false}
       onMouseEnter={() => router.prefetch(item.href)}
-      className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+      className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
         isActive
-          ? "bg-[color:var(--zentra-sidebar-active)] text-white shadow-[inset_3px_0_0_var(--zentra-sidebar-accent)]"
+          ? "bg-[color:var(--zentra-sidebar-active)] text-white"
           : "text-slate-200 hover:bg-[color:var(--zentra-sidebar-hover)]"
       }`}
     >
+      {isActive && (
+        <span
+          aria-hidden
+          className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-[#7DCFD2] shadow-[0_0_12px_rgba(125,207,210,0.7)]"
+        />
+      )}
       <Icon className={`h-5 w-5 shrink-0 ${isActive ? "text-white" : "text-slate-400"}`} />
       {!collapsed && (
         <>
