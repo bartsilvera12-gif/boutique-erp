@@ -462,6 +462,9 @@ export default function InventarioPage() {
                       {sinControl ? "—" : <span className="tabular-nums">{formatStock(p.stock_minimo)}</span>}
                     </td>
                     <td className="py-4 pr-4 text-gray-600 text-xs hidden lg:table-cell">
+                      {/* Prioriza la ubicación legacy (FK a inventario_ubicaciones)
+                          si está cargada; si no, cae al "Departamento" del Excel
+                          (productos.ubicacion_deposito). */}
                       {p.ubicacion_principal_id
                         ? (() => {
                             const u = ubicacionById.get(p.ubicacion_principal_id);
@@ -471,10 +474,12 @@ export default function InventarioPage() {
                                 <span className="text-gray-400"> — {u.tipo}</span>
                               </span>
                             ) : (
-                              <span className="text-gray-300">—</span>
+                              <span className="font-medium text-gray-700">{p.ubicacion_deposito ?? "—"}</span>
                             );
                           })()
-                        : <span className="text-gray-300">—</span>}
+                        : p.ubicacion_deposito
+                          ? <span className="font-medium text-gray-700">{p.ubicacion_deposito}</span>
+                          : <span className="text-gray-300">—</span>}
                     </td>
                     <td className="py-4 pr-4 hidden lg:table-cell">
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${metodoBadge[p.metodo_valuacion]}`}>
