@@ -158,9 +158,12 @@ export default function NuevaCompraPage() {
   const nlCostoInput = parseFloat(nl.costo_unitario_input) || 0;
   const nlCostoPYG = nlCostoInput * tipoCambioNum;
   const nlPrecio = parseFloat(nl.precio_venta) || 0;
+  // IVA informativo (mismo modelo que en ventas): subtotal = cantidad × costo
+  // unitario; total de línea = subtotal. El monto de IVA se calcula sólo
+  // para mostrarse, no se suma al total.
   const nlSubtotal = nlCant > 0 && nlCostoPYG > 0 ? nlCant * nlCostoPYG : 0;
   const nlIva = ivaMonto(nlSubtotal, nl.iva_tipo);
-  const nlTotal = nlSubtotal + nlIva;
+  const nlTotal = nlSubtotal;
   const nlMargen = nlPrecio > 0 && nlCostoPYG > 0 ? ((nlPrecio - nlCostoPYG) / nlPrecio) * 100 : null;
   const productoSel = productos.find((p) => p.id === nl.producto_id);
   // Materia prima / insumo NO vendible: no exigimos precio de venta (se compra para recetas).
