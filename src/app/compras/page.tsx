@@ -141,7 +141,7 @@ export default function ComprasPage() {
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-[#4FAEB2]/15 sm:p-5 lg:p-6">
 
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold">Órdenes de compra</h2>
+          <h2 className="text-xl font-semibold">Compras</h2>
           <div className="flex items-center gap-3">
             <ExportExcelButton url="/api/compras/export" />
             <Link href="/compras/nueva"

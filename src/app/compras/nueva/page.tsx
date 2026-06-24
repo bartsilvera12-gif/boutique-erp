@@ -9,6 +9,7 @@ import { getProductos, productoExiste, saveProducto } from "@/lib/inventario/sto
 import type { TipoIva, TipoPago, Moneda } from "@/lib/compras/types";
 import type { Proveedor } from "@/lib/proveedores/types";
 import type { MetodoValuacion, Producto } from "@/lib/inventario/types";
+import ProductoSearchSelect from "@/components/inventario/ProductoSearchSelect";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -220,8 +221,7 @@ export default function NuevaCompraPage() {
     setLineas((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  function handleProductoSelectChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const id = e.target.value;
+  function handleProductoSelected(id: string) {
     const p = productos.find((x) => x.id === id);
     setProductoCreado(null);
     const insumoNoVendible = !!p && p.es_insumo === true && p.es_vendible !== true;
@@ -553,12 +553,12 @@ export default function NuevaCompraPage() {
 
               <div>
                 <label className={labelSmClass}>Producto <span className="text-red-500">*</span></label>
-                <select value={nl.producto_id} onChange={handleProductoSelectChange} className={inputSmClass}>
-                  <option value="">Seleccionar producto...</option>
-                  {productos.map((p) => (
-                    <option key={p.id} value={p.id}>{p.nombre} — {p.sku} (stock: {p.stock_actual})</option>
-                  ))}
-                </select>
+                <ProductoSearchSelect
+                  value={nl.producto_id}
+                  onChange={handleProductoSelected}
+                  productos={productos}
+                  placeholder="Seleccionar producto…"
+                />
                 {productoSel && !productoCreado && (
                   <p className="mt-1.5 text-xs text-gray-400">
                     Costo promedio actual: {formatGs(productoSel.costo_promedio)} · Precio venta actual: {formatGs(productoSel.precio_venta)}
