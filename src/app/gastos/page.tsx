@@ -82,7 +82,15 @@ export default function GastosPage() {
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm ring-1 ring-[#4FAEB2]/15">
         {cargando ? (
-          <div className="py-16 text-center text-gray-400 text-sm animate-pulse">Cargando gastos…</div>
+          <div className="py-16 text-center text-sm text-slate-400">
+            <div className="inline-flex items-center gap-2">
+              <svg className="h-4 w-4 animate-spin text-[#4FAEB2]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
+                <path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+              </svg>
+              Cargando gastos…
+            </div>
+          </div>
         ) : gastos.length === 0 ? (
           <div className="py-16 text-center text-gray-400">
             <p className="text-4xl mb-3">📋</p>

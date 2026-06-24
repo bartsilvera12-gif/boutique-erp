@@ -148,9 +148,11 @@ export default function VentasPage() {
   const [busqueda,   setBusqueda]   = useState("");
   const [filtroTipo, setFiltroTipo] = useState<TipoVenta | "">("");
   const [filtroIva,  setFiltroIva]  = useState<TipoIvaVenta | "">("");
+  const [cargandoLista, setCargandoLista] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    setCargandoLista(true);
     getVentas().then((data) => {
       if (cancelled) return;
       const ordenadas = [...data].sort((a, b) => {
@@ -159,6 +161,8 @@ export default function VentasPage() {
         return tb - ta || b.numero_control.localeCompare(a.numero_control);
       });
       setTodas(ordenadas);
+    }).finally(() => {
+      if (!cancelled) setCargandoLista(false);
     });
     return () => {
       cancelled = true;
@@ -327,7 +331,19 @@ export default function VentasPage() {
               </tr>
             </thead>
             <tbody>
-              {filtradas.length === 0 ? (
+              {cargandoLista ? (
+                <tr>
+                  <td colSpan={10} className="py-12 text-center text-sm text-slate-400">
+                    <div className="inline-flex items-center gap-2">
+                      <svg className="h-4 w-4 animate-spin text-[#4FAEB2]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
+                        <path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                      </svg>
+                      Cargando ventas…
+                    </div>
+                  </td>
+                </tr>
+              ) : filtradas.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="py-12 text-center text-gray-400">
                     {todas.length === 0

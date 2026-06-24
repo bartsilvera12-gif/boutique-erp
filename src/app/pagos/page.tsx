@@ -198,7 +198,10 @@ export default function PagosPage() {
       {error && <div className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">{error}</div>}
 
       {loading ? (
-        <div className="p-8 flex items-center gap-2 text-sm text-gray-500"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</div>
+        <div className="p-10 flex items-center justify-center gap-2 text-sm text-slate-400">
+          <Loader2 className="h-4 w-4 animate-spin text-[#4FAEB2]" />
+          Cargando cobros…
+        </div>
       ) : tab === "pendientes" ? (
         <div className="w-full rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
           {pendientes.length === 0 ? (
