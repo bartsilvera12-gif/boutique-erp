@@ -9,6 +9,21 @@ import { API_ERRORS } from "@/lib/api/errors";
 import type { Venta, LineaVenta } from "@/lib/ventas/types";
 import { createServiceRoleClientWithDbSchema } from "@/lib/supabase/empresa-data-schema";
 import { estaFacturado, marcarFacturado } from "@/lib/caja/facturacion";
+import { getCajaAbiertaPg } from "@/lib/caja/server/caja-pg";
+
+/**
+ * Devuelve el id de la caja abierta (turno) o null si no hay ninguna. Si la
+ * consulta falla, devuelve null silenciosamente: el módulo caja es opcional
+ * y la venta NO debe romperse porque el lookup de turno tropiece.
+ */
+async function resolveCajaAbiertaId(schema: string, empresaId: string): Promise<string | null> {
+  try {
+    const c = await getCajaAbiertaPg(schema, empresaId);
+    return c?.id ?? null;
+  } catch {
+    return null;
+  }
+}
 
 /** Error tipado: el pedido que se intenta facturar ya tiene venta. */
 class PedidoYaFacturadoError extends Error {
@@ -234,6 +249,7 @@ export async function POST(request: NextRequest) {
       pedidoCocina,
       permitirSinStock,
       generaNotaRemision: o.genera_nota_remision === true,
+      cajaId: await resolveCajaAbiertaId(schema, auth.empresa_id),
     });
 
     // Vincular el pedido facturado con la venta creada (Caja). Trazabilidad:
