@@ -4,8 +4,8 @@
  */
 import * as XLSX from "xlsx";
 
-export const MAX_BYTES = 5 * 1024 * 1024;
-export const MAX_ROWS = 5_000;
+export const MAX_BYTES = 25 * 1024 * 1024;
+export const MAX_ROWS = 25_000;
 
 /** Normaliza un header: trim + upper + sin diacriticos + espacios->_  */
 export function normalizeHeader(h: string): string {
