@@ -4,6 +4,12 @@ import { leerArchivoYAuth } from "@/lib/imports/import-helpers";
 import { parseProductosRows, buildResolverMaps, buildPreview, commitProductos } from "@/lib/imports/productos-importer";
 import { registrarImportAudit } from "@/lib/excel/imports-audit-pg";
 
+// Catálogos grandes (Felix Bogado: 6k SKUs) requieren ventana amplia:
+// cada fila hace 2-3 queries SQL (SELECT stock + UPDATE + INSERT
+// movimiento). Default de Next.js route handler es 10s; subimos a 5 min.
+export const maxDuration = 300;
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   const res = await leerArchivoYAuth(request);
   if (!res.ok) return NextResponse.json(errorResponse(res.error), { status: res.status });

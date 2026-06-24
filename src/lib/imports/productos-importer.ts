@@ -381,10 +381,14 @@ export async function commitProductos(
     }
   }
 
-  // Procesar productos en chunks
+  // Procesar productos en chunks, PARALELIZADOS dentro de cada chunk.
+  // Con 5924 SKUs y queries secuenciales (~3 por fila × 50ms = 150ms/fila)
+  // el import tardaba ~15 min y excedía el timeout HTTP. Promise.all dentro
+  // de cada chunk de 200 corre limitado por la pool (default 10 conexiones)
+  // sin saturarla, y baja el wall-time a 2-3 min para el catálogo completo.
   for (const chunk of chunked(parsed, 200)) {
-    for (const p of chunk) {
-      if (p.errors.length > 0) { out.errors++; out.errorMessages.push(`Fila ${p.row_number}: ${p.errors.join("; ")}`); continue; }
+    await Promise.all(chunk.map(async (p) => {
+      if (p.errors.length > 0) { out.errors++; out.errorMessages.push(`Fila ${p.row_number}: ${p.errors.join("; ")}`); return; }
       const categoriaId = p.categoria_nombre ? maps.categoriasByName.get(p.categoria_nombre) ?? null : null;
       const proveedorId = p.proveedor_nombre ? maps.proveedoresByName.get(p.proveedor_nombre) ?? null : null;
       const ubicacionId = p.ubicacion_nombre
@@ -393,12 +397,12 @@ export async function commitProductos(
 
       try {
         if (p.match_id) {
-          // UPDATE — leer stock anterior para calcular delta y generar movimiento
-          const prevQ = await pool.query<{ stock_actual: string | number; nombre: string; sku: string }>(
-            `SELECT stock_actual, nombre, sku FROM ${tP} WHERE id=$1::uuid AND empresa_id=$2::uuid`,
-            [p.match_id, empresaId]
-          );
-          const stockAnterior = Number(prevQ.rows[0]?.stock_actual ?? 0);
+          // UPDATE — el stock anterior ya lo tenemos en maps (cargado por
+          // buildResolverMaps). Evitamos un SELECT extra por fila.
+          const existente = (p.sku && maps.productosBySku.get(p.sku))
+            || (p.codigo_barras && maps.productosByCodigo.get(p.codigo_barras))
+            || null;
+          const stockAnterior = Number(existente?.stock_actual ?? 0);
           await pool.query(
             `UPDATE ${tP} SET
                nombre=$1, sku=$2, codigo_barras=NULLIF($3,''),
@@ -479,7 +483,7 @@ export async function commitProductos(
           out.errorMessages.push(`Fila ${p.row_number}: ${msg.slice(0, 200)}`);
         }
       }
-    }
+    }));
   }
 
   // Si TODOS (o casi todos) los movimientos fallaron, es un problema sistémico
