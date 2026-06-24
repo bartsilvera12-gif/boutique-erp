@@ -235,6 +235,16 @@ export default function ComprasPage() {
                               📎 Ver comprobante
                             </a>
                           )}
+                          {g.tipo_pago === "credito" && (
+                            <Link
+                              href={`/pagos-proveedores`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="ml-2 mt-0.5 inline-flex items-center gap-1 text-xs font-medium text-amber-700 hover:text-amber-900 hover:underline"
+                              title="Registrar pago a este proveedor"
+                            >
+                              💰 Pagar
+                            </Link>
+                          )}
                         </td>
                         <td className="py-4 pr-4 text-right tabular-nums text-gray-700">{g.items.length}</td>
                         <td className="py-4 pr-4 text-right tabular-nums font-semibold text-gray-800">{formatGs(g.total)}</td>

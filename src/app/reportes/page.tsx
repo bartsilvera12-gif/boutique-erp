@@ -2,7 +2,7 @@
 
 import PageHeader from "@/components/ui/PageHeader";
 import { ReportCard } from "@/components/reportes/ReportCard";
-import { Wallet, Truck, Package, ShoppingCart, ArrowLeftRight, Archive, Repeat } from "lucide-react";
+import { Wallet, Truck, Package, ShoppingCart, ArrowLeftRight, Archive, Repeat, HandCoins } from "lucide-react";
 
 /** Hub de reportería operativa (Fase 1: Estado de cuenta + Proveedores). */
 export default function ReportesPage() {
@@ -76,6 +76,15 @@ export default function ReportesPage() {
             icon={Repeat}
             description="Cuántas veces se vendió el stock de cada producto en el período. Identifica productos de alta/media/baja/nula rotación."
             href="/reportes/rotacion"
+          />
+        </li>
+        <li>
+          <ReportCard
+            title="Cuentas por pagar"
+            subtitle="Deuda con proveedores · antigüedad"
+            icon={HandCoins}
+            description="Resumen de deuda total agrupada por proveedor con desglose por antigüedad (0-30 / 31-60 / 61-90 / +90 días)."
+            href="/reportes/cuentas-por-pagar"
           />
         </li>
       </ul>
