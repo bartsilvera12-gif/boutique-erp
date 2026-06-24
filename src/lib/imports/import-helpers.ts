@@ -68,9 +68,42 @@ export function chunked<T>(arr: T[], size: number): T[][] {
   return out;
 }
 
+/**
+ * Normaliza una clave para matching case/accent-insensitive y sin espacios extra.
+ * "Código"      → "CODIGO"
+ * "P. Costo"    → "PCOSTO"
+ * "stock_actual"→ "STOCKACTUAL"
+ */
+function normKey(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+}
+
+/**
+ * Cache de la row normalizada: para no recomputar normKey por cada pick(),
+ * memoizamos en la propia row (Symbol-key). Acepta header con tildes,
+ * espacios y mayúsculas mixtas.
+ */
+const NORM_CACHE = new WeakMap<object, Map<string, string>>();
+function normalizedRow(row: Record<string, string>): Map<string, string> {
+  let m = NORM_CACHE.get(row);
+  if (m) return m;
+  m = new Map();
+  for (const k of Object.keys(row)) {
+    const nk = normKey(k);
+    if (!m.has(nk)) m.set(nk, row[k]);
+  }
+  NORM_CACHE.set(row, m);
+  return m;
+}
+
 export function pick(row: Record<string, string>, ...keys: string[]): string {
+  const m = normalizedRow(row);
   for (const k of keys) {
-    const v = row[k];
+    const v = m.get(normKey(k));
     if (v != null && String(v).trim() !== "") return String(v).trim();
   }
   return "";
@@ -79,7 +112,9 @@ export function pick(row: Record<string, string>, ...keys: string[]): string {
 export function pickNumber(row: Record<string, string>, ...keys: string[]): number {
   const raw = pick(row, ...keys);
   if (!raw) return 0;
-  const n = Number(String(raw).replace(/\./g, "").replace(",", "."));
+  // Limpiar símbolos de moneda y separador de miles. Acepta "₲22.500", "Gs. 22.500", "22500", "22,500.50".
+  const cleaned = String(raw).replace(/[₲$€]|Gs\.?/gi, "").trim().replace(/\./g, "").replace(",", ".");
+  const n = Number(cleaned);
   return Number.isFinite(n) ? n : 0;
 }
 

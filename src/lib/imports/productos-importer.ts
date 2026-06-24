@@ -22,9 +22,13 @@ export interface ProductoParsed {
   categoria_nombre: string;
   proveedor_nombre: string;
   ubicacion_nombre: string;
+  /** Texto libre para "Departamento" del Excel autopartes — se guarda en productos.ubicacion_deposito. */
+  ubicacion_deposito: string;
   unidad_medida: string;
   costo_promedio: number;
   precio_venta: number;
+  /** Precio mayorista opcional (P. Mayoreo del Excel autopartes). 0 → se persiste como null. */
+  precio_mayorista: number;
   stock_actual: number;
   stock_minimo: number;
   metodo_valuacion: "CPP" | "FIFO" | "LIFO";
@@ -34,34 +38,72 @@ export interface ProductoParsed {
   match_id?: string | null;
 }
 
+/**
+ * Heurística para detectar EAN/UPC en una columna de "Código":
+ * - 12+ caracteres
+ * - Sólo dígitos
+ * Si matchea, el header "Código" del Excel es en realidad un código de
+ * barras escaneable y la columna "Producto" trae el SKU corto interno.
+ */
+function esCodigoBarras(s: string): boolean {
+  const t = s.trim();
+  return t.length >= 12 && /^\d+$/.test(t);
+}
+
 const METODOS = new Set(["CPP", "FIFO", "LIFO"]);
 
 export function parseProductosRows(rows: Record<string, string>[]): ProductoParsed[] {
   return rows.map((r, idx) => {
     const errors: string[] = [];
     const warnings: string[] = [];
-    const nombre = normalizeUpperText(pick(r, "NOMBRE"));
+
+    // ── SKU / Nombre / Código de barras ──────────────────────────────
+    // Aliases del Excel canónico ("SKU", "NOMBRE", "CODIGO_BARRAS") +
+    // aliases del Excel autopartes Felix Bogado ("Código", "Producto").
+    let skuRaw = pick(r, "SKU", "CODIGO", "CÓDIGO");
+    const productoRaw = pick(r, "NOMBRE", "PRODUCTO");
+    let codigoBarrasRaw = pick(r, "CODIGO_BARRAS", "CODIGOBARRAS", "CODIGO BARRAS", "EAN");
+
+    // Patrón 2 del Excel autopartes: si el "Código" es un EAN largo y
+    // no se pasó otro código de barras explícito, swap:
+    //   sku           ← Producto (código corto memorable)
+    //   codigo_barras ← Código   (EAN escaneable)
+    if (!codigoBarrasRaw && skuRaw && esCodigoBarras(skuRaw)) {
+      codigoBarrasRaw = skuRaw;
+      skuRaw = productoRaw;
+    } else if (skuRaw.startsWith("(")) {
+      // Patrón 1: algunos códigos del Excel viejo empiezan con "(" suelto.
+      skuRaw = skuRaw.slice(1);
+    }
+
+    const nombre = normalizeUpperText(productoRaw || skuRaw);
     if (!nombre) errors.push("NOMBRE obligatorio.");
-    const sku = normalizeUpperText(pick(r, "SKU"));
-    const codigo_barras_raw = normalizeUpperText(pick(r, "CODIGO_BARRAS", "CODIGOBARRAS"));
+    const sku = normalizeUpperText(skuRaw);
+    const codigo_barras_raw = normalizeUpperText(codigoBarrasRaw);
     if (codigo_barras_raw && /^INT-/i.test(codigo_barras_raw)) {
       errors.push('Prefijo "INT-" reservado para códigos generados por el sistema.');
     }
     const mv = normalizeUpperText(pick(r, "METODO_VALUACION", "METODOVALUACION"));
     const metodo_valuacion = (METODOS.has(mv) ? mv : "CPP") as "CPP" | "FIFO" | "LIFO";
+
+    // ── Precio mayorista (P. Mayoreo en el Excel autopartes) ─────────
+    const mayoristaRaw = pickNumber(r, "PRECIO_MAYORISTA", "PRECIO MAYORISTA", "P MAYOREO", "P. MAYOREO", "MAYOREO", "MAYORISTA");
     return {
       row_number: idx + 2,
       nombre,
       sku,
       codigo_barras: codigo_barras_raw,
-      categoria_nombre: normalizeUpperText(pick(r, "CATEGORIA", "CATEGORIA_PRINCIPAL")),
+      categoria_nombre: normalizeUpperText(pick(r, "CATEGORIA", "CATEGORIA_PRINCIPAL", "CATEGORÍA")),
       proveedor_nombre: normalizeUpperText(pick(r, "PROVEEDOR_PRINCIPAL", "PROVEEDOR")),
-      ubicacion_nombre: normalizeUpperText(pick(r, "UBICACION_PRINCIPAL", "UBICACION")),
-      unidad_medida: normalizeUpperText(pick(r, "UNIDAD_MEDIDA", "UNIDADMEDIDA")) || "UNIDAD",
-      costo_promedio: pickNumber(r, "COSTO_PROMEDIO"),
-      precio_venta: pickNumber(r, "PRECIO_VENTA"),
-      stock_actual: pickNumber(r, "STOCK_ACTUAL"),
-      stock_minimo: pickNumber(r, "STOCK_MINIMO"),
+      ubicacion_nombre: normalizeUpperText(pick(r, "UBICACION_PRINCIPAL", "UBICACION", "UBICACIÓN")),
+      // "Departamento" del Excel autopartes → texto libre, va a ubicacion_deposito.
+      ubicacion_deposito: pick(r, "DEPARTAMENTO", "DEPARTAMENTO_FISICO"),
+      unidad_medida: normalizeUpperText(pick(r, "UNIDAD_MEDIDA", "UNIDADMEDIDA", "TIPO DE VENTA", "TIPO_VENTA")) || "UNIDAD",
+      costo_promedio: pickNumber(r, "COSTO_PROMEDIO", "P COSTO", "P. COSTO", "COSTO"),
+      precio_venta: pickNumber(r, "PRECIO_VENTA", "P VENTA", "P. VENTA", "PRECIO"),
+      precio_mayorista: mayoristaRaw,
+      stock_actual: pickNumber(r, "STOCK_ACTUAL", "EXISTENCIA", "STOCK"),
+      stock_minimo: pickNumber(r, "STOCK_MINIMO", "INV MINIMO", "INV. MÍNIMO", "INV. MINIMO", "INVENTARIO MINIMO"),
       metodo_valuacion,
       activo: pickBool(r, "ACTIVO"),
       errors,
@@ -213,7 +255,7 @@ export function buildPreview(parsed: ProductoParsed[], maps: ResolverMaps): Prev
       unidades_salida: totalSalida,
     },
     rows,
-    headers: ["NOMBRE","SKU","CODIGO_BARRAS","CATEGORIA","PROVEEDOR_PRINCIPAL","UBICACION_PRINCIPAL","UNIDAD_MEDIDA","COSTO_PROMEDIO","PRECIO_VENTA","STOCK_ACTUAL","STOCK_MINIMO","METODO_VALUACION","ACTIVO"],
+    headers: ["NOMBRE","SKU","CODIGO_BARRAS","CATEGORIA","PROVEEDOR_PRINCIPAL","UBICACION_PRINCIPAL","DEPARTAMENTO","UNIDAD_MEDIDA","COSTO_PROMEDIO","PRECIO_VENTA","PRECIO_MAYORISTA","STOCK_ACTUAL","STOCK_MINIMO","METODO_VALUACION","ACTIVO"],
   };
 }
 
@@ -348,11 +390,15 @@ export async function commitProductos(
                stock_actual=$7::numeric, stock_minimo=$8::numeric,
                metodo_valuacion=$9, activo=$10::boolean,
                categoria_principal_id=$11::uuid, proveedor_principal_id=$12::uuid, ubicacion_principal_id=$13::uuid,
+               precio_mayorista=NULLIF($14::numeric, 0),
+               ubicacion_deposito=NULLIF($15, ''),
                updated_at=now()
-             WHERE id=$14::uuid AND empresa_id=$15::uuid`,
+             WHERE id=$16::uuid AND empresa_id=$17::uuid`,
             [p.nombre, p.sku, p.codigo_barras, p.unidad_medida, p.costo_promedio, p.precio_venta,
              p.stock_actual, p.stock_minimo, p.metodo_valuacion, p.activo,
-             categoriaId, proveedorId, ubicacionId, p.match_id, empresaId]
+             categoriaId, proveedorId, ubicacionId,
+             p.precio_mayorista, p.ubicacion_deposito,
+             p.match_id, empresaId]
           );
           out.updated++;
           // Movimiento por delta (ajuste_manual + ENTRADA/SALIDA segun signo)
@@ -383,15 +429,18 @@ export async function commitProductos(
             `INSERT INTO ${tP} (
                empresa_id, nombre, sku, codigo_barras, codigo_barras_interno,
                unidad_medida, costo_promedio, precio_venta, stock_actual, stock_minimo,
-               metodo_valuacion, activo, categoria_principal_id, proveedor_principal_id, ubicacion_principal_id
+               metodo_valuacion, activo, categoria_principal_id, proveedor_principal_id, ubicacion_principal_id,
+               precio_mayorista, ubicacion_deposito
              ) VALUES (
                $1::uuid, $2, NULLIF($3,''), NULLIF($4,''), $5::boolean,
                $6, $7::numeric, $8::numeric, $9::numeric, $10::numeric,
-               $11, $12::boolean, $13::uuid, $14::uuid, $15::uuid
+               $11, $12::boolean, $13::uuid, $14::uuid, $15::uuid,
+               NULLIF($16::numeric, 0), NULLIF($17, '')
              ) RETURNING id`,
             [empresaId, p.nombre, p.sku, codigoBarras, codigoInterno,
              p.unidad_medida, p.costo_promedio, p.precio_venta, p.stock_actual, p.stock_minimo,
-             p.metodo_valuacion, p.activo, categoriaId, proveedorId, ubicacionId]
+             p.metodo_valuacion, p.activo, categoriaId, proveedorId, ubicacionId,
+             p.precio_mayorista, p.ubicacion_deposito]
           );
           out.inserted++;
           // Movimiento de inventario inicial si stock > 0
