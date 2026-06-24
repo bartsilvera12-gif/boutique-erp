@@ -2189,7 +2189,7 @@ export default function DashboardPage() {
               Dashboard
             </h1>
             <p className="mt-1 max-w-md text-sm leading-relaxed" style={{ color: Z.muted }}>
-              Neura ERP · Vista {nivel === "supervisor" ? "de tu área" : "global"} · período alineado al filtro
+              Autorepuestos Felix Bogado · Vista {nivel === "supervisor" ? "de tu área" : "global"} · período alineado al filtro
             </p>
           </div>
         </div>
