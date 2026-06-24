@@ -385,12 +385,9 @@ export default function Sidebar() {
   );
   const [favoritos, setFavoritos] = useState<string[]>([]);
   const [collapsed, setCollapsed] = useState(false);
-  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({
-    inventario: true,
-    sorteos: true,
-    compras: true,
-  });
-  // Familias del menú colapsables (agrupamiento visual). Abiertas por defecto.
+  // Items con submenu: arrancan cerrados. El usuario los abre con click.
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  // Familias del menú colapsables (agrupamiento visual). Cerradas por defecto.
   const [expandedFamilies, setExpandedFamilies] = useState<Record<string, boolean>>({});
   // cargando arranca en false si ya hidratamos desde cache; el spinner solo
   // aparece en el primer login real, no al volver a la pestaña.
@@ -632,9 +629,9 @@ export default function Sidebar() {
     return secciones;
   }, [mainItemsFiltered]);
 
-  const familiaExpandida = (id: string) => expandedFamilies[id] ?? true; // abiertas por defecto
+  const familiaExpandida = (id: string) => expandedFamilies[id] ?? false; // cerradas por defecto
   const toggleFamilia = (id: string) =>
-    setExpandedFamilies((prev) => ({ ...prev, [id]: !(prev[id] ?? true) }));
+    setExpandedFamilies((prev) => ({ ...prev, [id]: !(prev[id] ?? false) }));
   const forzarExpandirFamilias = normalizeMenuSearch(menuSearchQuery).length > 0;
 
   const anyMenuVisible =
