@@ -153,7 +153,7 @@ export default function ComprasPage() {
 
         {/* Filtros */}
         <div className="flex flex-wrap items-center gap-3 mb-5 pb-5 border-b border-gray-100">
-          <input type="text" placeholder="Buscar por distribuidor, producto o N° control..."
+          <input type="text" placeholder="Buscar por proveedor, producto o N° control..."
             value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
             className={`${inputFilterClass} min-w-0 flex-1 sm:min-w-72`} />
           <FancySelect value={filtroTipoPago} onChange={(v) => setFiltroTipoPago(v as TipoPago | "")}
@@ -180,7 +180,7 @@ export default function ComprasPage() {
             <thead>
               <tr className="border-b text-gray-500">
                 <th className="py-3 pr-4 font-medium">N° Control</th>
-                <th className="py-3 pr-4 font-medium">Distribuidor</th>
+                <th className="py-3 pr-4 font-medium">Proveedor</th>
                 <th className="py-3 pr-4 font-medium">Productos</th>
                 <th className="py-3 pr-4 font-medium text-right">Ítems</th>
                 <th className="py-3 pr-4 font-medium text-right">Total</th>

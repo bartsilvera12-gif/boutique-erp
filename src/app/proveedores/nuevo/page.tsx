@@ -56,9 +56,9 @@ export default function NuevoProveedorPage() {
     <div className="space-y-8">
       <div>
         <Link href="/proveedores" className="text-sm text-sky-600 hover:underline">
-          ← Distribuidores
+          ← Proveedores
         </Link>
-        <h1 className="mt-2 text-3xl font-bold text-gray-800">Nuevo distribuidor</h1>
+        <h1 className="mt-2 text-3xl font-bold text-gray-800">Nuevo proveedor</h1>
         <p className="text-gray-600">Los datos se guardan en la base de tu empresa.</p>
       </div>
 

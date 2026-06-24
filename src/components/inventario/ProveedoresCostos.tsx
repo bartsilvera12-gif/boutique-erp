@@ -132,7 +132,7 @@ export default function ProveedoresCostos({ productoId }: { productoId: string }
         <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-[#4FAEB2]" style={{ boxShadow: "0 0 0 3px rgba(79,174,178,0.18)" }} />
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#4FAEB2]">Zentra · Abastecimiento</p>
       </div>
-      <h2 className="text-lg font-semibold tracking-tight text-slate-900">Distribuidores y costos</h2>
+      <h2 className="text-lg font-semibold tracking-tight text-slate-900">Proveedores y costos</h2>
       <p className="mt-0.5 text-xs text-slate-500">Costos históricos derivados de compras reales registradas.</p>
 
       <div className="mt-4">

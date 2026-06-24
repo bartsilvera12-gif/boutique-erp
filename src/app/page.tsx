@@ -1651,7 +1651,7 @@ const DashInventario = memo(function DashInventario({
                     <th className="w-10 px-3 py-3">
                       <input type="checkbox" className="rounded border-slate-300 text-[#0EA5E9] focus:ring-[#0EA5E9]" />
                     </th>
-                    {["Producto", "Stock actual", "Stock mín.", "Estado", "Distribuidor"].map(h => (
+                    {["Producto", "Stock actual", "Stock mín.", "Estado", "Proveedor"].map(h => (
                       <th key={h} className="text-left text-xs font-semibold text-slate-700 px-3 py-3 uppercase tracking-wide">{h}</th>
                     ))}
                   </tr>

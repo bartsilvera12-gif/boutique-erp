@@ -48,6 +48,7 @@ export default function ReportesPage() {
             subtitle="Abastecimiento y relación comercial"
             icon={Truck}
             description="Resumen de proveedores, compras por proveedor y actividad del mes."
+
             href="/reportes/proveedores"
           />
         </li>

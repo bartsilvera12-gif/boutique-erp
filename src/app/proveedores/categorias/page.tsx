@@ -80,10 +80,10 @@ export default function ProveedorCategoriasPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <Link href="/proveedores" className="text-sm text-sky-600 hover:underline">
-            ← Distribuidores
+            ← Proveedores
           </Link>
-          <h1 className="mt-2 text-3xl font-bold text-gray-800">Rubros de distribuidor</h1>
-          <p className="text-gray-600">Etiquetas para clasificar distribuidores (textil, importación, etc.).</p>
+          <h1 className="mt-2 text-3xl font-bold text-gray-800">Rubros de proveedor</h1>
+          <p className="text-gray-600">Etiquetas para clasificar proveedores (textil, importación, etc.).</p>
           <div className="mt-3 max-w-2xl rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
             Los rubros que cargues acá <strong>se importan automáticamente</strong> como
             categorías en{" "}

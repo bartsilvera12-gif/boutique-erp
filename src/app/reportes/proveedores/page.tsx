@@ -39,7 +39,7 @@ export default function ProveedoresReportePage() {
     <div className="space-y-8">
       <PageHeader
         eyebrow="Zentra · Reportes"
-        title="Distribuidores"
+        title="Proveedores"
         description="Abastecimiento y relación comercial del período"
         backHref="/reportes"
         backLabel="Reportes"
@@ -55,15 +55,15 @@ export default function ProveedoresReportePage() {
         <p className="text-slate-500 animate-pulse">Cargando…</p>
       ) : !data ? (
         <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 text-slate-500">
-          No se pudo cargar el reporte de distribuidores.
+          No se pudo cargar el reporte de proveedores.
         </div>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-            <StatCard compact label="Total distribuidores" value={String(data.totalProveedores)} accent />
+            <StatCard compact label="Total proveedores" value={String(data.totalProveedores)} accent />
             <StatCard compact label="Con compras (mes)" value={String(data.conCompras)} />
             <StatCard compact label="Total comprado (mes)" value={formatGs(data.totalComprado)} />
-            <StatCard compact label="Compra promedio" value={formatGs(data.compraPromedio)} hint="por distribuidor activo" />
+            <StatCard compact label="Compra promedio" value={formatGs(data.compraPromedio)} hint="por proveedor activo" />
             <StatCard
               compact
               label="Última compra"
@@ -73,12 +73,12 @@ export default function ProveedoresReportePage() {
           </div>
 
           <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-            <h2 className="text-base font-semibold text-slate-800 mb-4">Distribuidores</h2>
+            <h2 className="text-base font-semibold text-slate-800 mb-4">Proveedores</h2>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[760px] text-left text-sm">
                 <thead>
                   <tr className="border-b text-slate-500">
-                    <th className="py-2.5 pr-4 font-medium">Distribuidor</th>
+                    <th className="py-2.5 pr-4 font-medium">Proveedor</th>
                     <th className="py-2.5 pr-4 font-medium">RUC</th>
                     <th className="py-2.5 pr-4 font-medium">Teléfono</th>
                     <th className="py-2.5 pr-4 font-medium text-right">Compras del mes</th>

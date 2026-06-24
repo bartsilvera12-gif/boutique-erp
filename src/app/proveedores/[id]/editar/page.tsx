@@ -26,7 +26,7 @@ export default function EditarProveedorPage() {
       if (cancel) return;
       setCategorias(cats);
       if (!p) {
-        setError("Distribuidor no encontrado.");
+        setError("Proveedor no encontrado.");
         setLoading(false);
         return;
       }
@@ -94,9 +94,9 @@ export default function EditarProveedorPage() {
     <div className="space-y-8">
       <div>
         <Link href="/proveedores" className="text-sm text-sky-600 hover:underline">
-          ← Distribuidores
+          ← Proveedores
         </Link>
-        <h1 className="mt-2 text-3xl font-bold text-gray-800">Editar distribuidor</h1>
+        <h1 className="mt-2 text-3xl font-bold text-gray-800">Editar proveedor</h1>
       </div>
 
       {loading ? (

@@ -248,7 +248,7 @@ export default function NuevaCompraPage() {
       return setErrorSubmit("Cargá el tipo de cambio (USD → Gs.).");
 
     const proveedor = proveedores.find((p) => String(p.id) === cab.proveedor_id);
-    if (!proveedor) return setErrorSubmit("Distribuidor no encontrado. Recargá e intentá de nuevo.");
+    if (!proveedor) return setErrorSubmit("Proveedor no encontrado. Recargá e intentá de nuevo.");
 
     const items: CompraItemPayload[] = lineas.map((l) => ({
       producto_id: l.producto_id,
@@ -395,11 +395,11 @@ export default function NuevaCompraPage() {
                   placeholder="Ej: 001-001-0000001" className={inputClass} />
               </div>
               <div>
-                <label className={labelClass}>Distribuidor <span className="text-red-500">*</span></label>
+                <label className={labelClass}>Proveedor <span className="text-red-500">*</span></label>
                 <select value={cab.proveedor_id}
                   onChange={(e) => { setCab((p) => ({ ...p, proveedor_id: e.target.value })); setProveedorCreado(null); }}
                   className={inputClass} required>
-                  <option value="">Seleccionar distribuidor...</option>
+                  <option value="">Seleccionar proveedor...</option>
                   {proveedores.map((p) => (
                     <option key={p.id} value={p.id}>{p.nombre} — RUC {p.ruc}</option>
                   ))}
@@ -422,7 +422,7 @@ export default function NuevaCompraPage() {
             </div>
 
             {proveedorCreado && (
-              <p className="text-xs text-green-600">✓ Distribuidor &quot;{proveedorCreado}&quot; creado y seleccionado.</p>
+              <p className="text-xs text-green-600">✓ Proveedor &quot;{proveedorCreado}&quot; creado y seleccionado.</p>
             )}
             {!mostrarFormProveedor ? (
               <button type="button" onClick={() => { setMostrarFormProveedor(true); setProveedorCreado(null); }}

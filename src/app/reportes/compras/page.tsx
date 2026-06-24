@@ -67,7 +67,7 @@ export default function ComprasReportePage() {
             <StatCard compact label="Total comprado" value={formatGs(data.totalComprado)} accent />
             <StatCard compact label="Compras del mes" value={String(data.cantidad)} hint={`${data.cantidadItems} ítems / líneas`} />
             <StatCard compact label="Compra más alta" value={data.compraMasAlta ? formatGs(data.compraMasAlta.total) : "—"} hint={data.compraMasAlta ? `${data.compraMasAlta.numero_control} · ${data.compraMasAlta.proveedor_nombre}` : "Sin compras"} />
-            <StatCard compact label="Distribuidor con mayor monto" value={data.proveedorMayor ? data.proveedorMayor.proveedor_nombre : "—"} hint={data.proveedorMayor ? formatGs(data.proveedorMayor.total) : ""} />
+            <StatCard compact label="Proveedor con mayor monto" value={data.proveedorMayor ? data.proveedorMayor.proveedor_nombre : "—"} hint={data.proveedorMayor ? formatGs(data.proveedorMayor.total) : ""} />
             <StatCard compact label="Producto más comprado" value={data.productoMasComprado ? data.productoMasComprado.producto_nombre : "—"} hint={data.productoMasComprado ? `${data.productoMasComprado.cantidad} u.` : ""} />
             <StatCard compact label="Producto con mayor gasto" value={data.productoMayorGasto ? data.productoMayorGasto.producto_nombre : "—"} hint={data.productoMayorGasto ? formatGs(data.productoMayorGasto.gasto) : ""} />
           </div>
@@ -84,7 +84,7 @@ export default function ComprasReportePage() {
                     <tr className="border-b text-slate-500">
                       <th className="py-2.5 pr-4 font-medium">Fecha</th>
                       <th className="py-2.5 pr-4 font-medium">N° Compra</th>
-                      <th className="py-2.5 pr-4 font-medium">Distribuidor</th>
+                      <th className="py-2.5 pr-4 font-medium">Proveedor</th>
                       <th className="py-2.5 pr-4 font-medium text-right">Ítems</th>
                       <th className="py-2.5 pr-4 font-medium text-right">Subtotal</th>
                       <th className="py-2.5 pr-4 font-medium text-right">IVA</th>
@@ -131,7 +131,7 @@ export default function ComprasReportePage() {
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Total por proveedor */}
             <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-              <h2 className="text-base font-semibold text-slate-800 mb-4">Total por distribuidor</h2>
+              <h2 className="text-base font-semibold text-slate-800 mb-4">Total por proveedor</h2>
               {data.porProveedor.length === 0 ? (
                 <p className="text-sm text-slate-400">Sin datos.</p>
               ) : (
@@ -139,7 +139,7 @@ export default function ComprasReportePage() {
                   <table className="w-full text-left text-sm">
                     <thead>
                       <tr className="border-b text-slate-500">
-                        <th className="py-2.5 pr-4 font-medium">Distribuidor</th>
+                        <th className="py-2.5 pr-4 font-medium">Proveedor</th>
                         <th className="py-2.5 pr-4 font-medium text-right">Compras</th>
                         <th className="py-2.5 font-medium text-right">Total</th>
                       </tr>
