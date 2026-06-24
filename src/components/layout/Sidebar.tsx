@@ -315,29 +315,36 @@ function NavItem({
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden pl-4 space-y-0.5"
+              className="overflow-hidden"
             >
-              {item.children.map((c) => (
-                <Link
-                  key={c.href}
-                  href={c.href}
-                  prefetch={false}
-                  onMouseEnter={() => router.prefetch(c.href)}
-                  className={`relative block rounded-lg px-3 py-2 text-sm transition-all ${
-                    menuChildPathActive(p, c.href, c.exactMatch)
-                      ? "bg-[color:var(--zentra-sidebar-active)] text-white font-medium"
-                      : "text-slate-300 hover:bg-[color:var(--zentra-sidebar-hover)]"
-                  }`}
-                >
-                  {menuChildPathActive(p, c.href, c.exactMatch) && (
-                    <span
-                      aria-hidden
-                      className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-[#7DCFD2] shadow-[0_0_12px_rgba(125,207,210,0.7)]"
-                    />
-                  )}
-                  {c.label}
-                </Link>
-              ))}
+              {/* Línea vertical guía + padding para que el dot del item
+                  activo (-left-[13px]) caiga exactamente sobre la línea. */}
+              <div className="relative ml-6 mt-1 space-y-0.5 border-l border-white/[0.08] pl-3">
+                {item.children.map((c) => {
+                  const childActive2 = menuChildPathActive(p, c.href, c.exactMatch);
+                  return (
+                    <Link
+                      key={c.href}
+                      href={c.href}
+                      prefetch={false}
+                      onMouseEnter={() => router.prefetch(c.href)}
+                      className={`relative block rounded-lg px-3 py-1.5 text-[13px] transition-all ${
+                        childActive2
+                          ? "bg-[#7DCFD2]/14 font-medium text-white"
+                          : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
+                      }`}
+                    >
+                      {childActive2 && (
+                        <span
+                          aria-hidden
+                          className="absolute -left-[13px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-[#7DCFD2] shadow-[0_0_10px_rgba(125,207,210,0.8)]"
+                        />
+                      )}
+                      {c.label}
+                    </Link>
+                  );
+                })}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
