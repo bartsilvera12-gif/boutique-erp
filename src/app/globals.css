@@ -275,7 +275,7 @@ body {
 /* =============================================================================
    Selects nativos — tratamiento premium global (Bloque 3 QA 2026)
    Reemplaza la flecha del SO por un chevron consistente y unifica el focus a
-   turquesa SIN tocar el JSX de los ~61 <select> de la app. Las utilidades
+   turquesa SIN tocar el JSX de los 180+ <select> de la app. Las utilidades
    Tailwind de cada select (bg/borde/padding propios) siguen ganando por mayor
    especificidad; esto solo rellena lo que no esté definido + el chevron + focus.
    ============================================================================= */
@@ -289,6 +289,26 @@ select:not([multiple]):not([size]) {
   background-size: 1.05rem 1.05rem;
   padding-right: 2.1rem;
   cursor: pointer;
+  /* Transición suave para hover/focus → look más pulido sin parpadeo. */
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+  /* Tipografía coherente: heredan el font del padre (evita el font del SO). */
+  font: inherit;
+  /* Evitar que el SO trunque el texto detrás del chevron. */
+  text-overflow: ellipsis;
+}
+
+/* Hover sutil: el borde se acerca al turquesa para anticipar el focus.
+   Solo se aplica si el select tiene un border-color definido (la regla
+   apunta con [class*="border-"] al typical Tailwind border-slate-*). */
+select:not([multiple]):not([size]):not(:disabled):hover {
+  background-color: rgba(79, 174, 178, 0.025);
+}
+
+/* El chevron se torna más saturado al hacer hover/focus — pequeño detalle pero
+   se siente más "vivo". */
+select:not([multiple]):not([size]):not(:disabled):hover,
+select:not([multiple]):not([size]):focus {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23339a9e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
 }
 
 /* Focus turquesa unificado para controles de formulario (donde no haya un focus
@@ -303,7 +323,20 @@ textarea:focus-visible {
 
 select:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.55;
+  background-color: rgb(248 250 252); /* slate-50 */
+}
+
+/* Las <option> dentro del dropdown nativo usan el font del SO por defecto.
+   Forzar el font de la app mejora la coherencia visual cuando se abre. */
+select option {
+  font: inherit;
+  padding: 0.4rem 0.5rem;
+  color: rgb(30 41 59); /* slate-800 */
+}
+select option:checked {
+  background-color: rgba(79, 174, 178, 0.12);
+  color: rgb(15 23 42); /* slate-900 */
 }
 
 

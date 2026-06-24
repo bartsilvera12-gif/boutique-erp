@@ -420,6 +420,68 @@ export default function InventarioPage() {
 
         </div>
 
+        {/* Controles de paginación — versión TOP (mismo bloque que el de abajo) */}
+        {productos.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 px-1 pb-3 text-sm">
+            <div className="flex items-center gap-2 text-slate-600">
+              <label htmlFor="page-size-top" className="text-xs text-slate-500">Mostrar</label>
+              <select
+                id="page-size-top"
+                value={String(pageSize)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setPageSize(v === "todos" ? "todos" : (parseInt(v) as 10 | 50 | 100));
+                }}
+                className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#4FAEB2]/30"
+              >
+                <option value="10">10</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="todos">Todos</option>
+              </select>
+              <span className="text-xs text-slate-400">
+                {pageSize === "todos"
+                  ? `${productos.length} producto(s)`
+                  : `${paginaSegura * pageSize + 1}–${Math.min((paginaSegura + 1) * pageSize, productos.length)} de ${productos.length}`}
+              </span>
+            </div>
+
+            {pageSize !== "todos" && totalPaginas > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setPaginaActual(0)}
+                  disabled={paginaSegura === 0}
+                  className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Primera página"
+                >«</button>
+                <button
+                  type="button"
+                  onClick={() => setPaginaActual((p) => Math.max(0, p - 1))}
+                  disabled={paginaSegura === 0}
+                  className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >‹ Anterior</button>
+                <span className="px-3 text-xs text-slate-600 tabular-nums">
+                  Página <span className="font-semibold">{paginaSegura + 1}</span> de {totalPaginas}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPaginaActual((p) => Math.min(totalPaginas - 1, p + 1))}
+                  disabled={paginaSegura >= totalPaginas - 1}
+                  className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >Siguiente ›</button>
+                <button
+                  type="button"
+                  onClick={() => setPaginaActual(totalPaginas - 1)}
+                  disabled={paginaSegura >= totalPaginas - 1}
+                  className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Última página"
+                >»</button>
+              </div>
+            )}
+          </div>
+        )}
+
         <EdgeScrollArea>
           {/* min-w-[1100px] fuerza scroll horizontal real en mobile; en >=lg
               vuelve a comportarse natural. Columnas no críticas (SKU, Unidad,
