@@ -2,7 +2,7 @@
 
 import PageHeader from "@/components/ui/PageHeader";
 import { ReportCard } from "@/components/reportes/ReportCard";
-import { Wallet, Truck, Package, ShoppingCart, ArrowLeftRight, Archive, Repeat, HandCoins } from "lucide-react";
+import { Wallet, Truck, Package, ShoppingCart, ArrowLeftRight, Archive, HandCoins } from "lucide-react";
 
 /** Hub de reportería operativa (Fase 1: Estado de cuenta + Proveedores). */
 export default function ReportesPage() {
@@ -68,15 +68,6 @@ export default function ReportesPage() {
             icon={Archive}
             description="Productos con stock > 0 que no tuvieron salidas en el período. Muestra valor inmovilizado y días sin venta."
             href="/reportes/sin-movimiento"
-          />
-        </li>
-        <li>
-          <ReportCard
-            title="Rotación de inventario"
-            subtitle="Velocidad de venta por producto"
-            icon={Repeat}
-            description="Cuántas veces se vendió el stock de cada producto en el período. Identifica productos de alta/media/baja/nula rotación."
-            href="/reportes/rotacion"
           />
         </li>
         <li>
