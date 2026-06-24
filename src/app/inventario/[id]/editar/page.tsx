@@ -62,6 +62,9 @@ export default function EditarProductoPage() {
     distribuidor_nombre: "",
     distribuidor_comision_pct: "",
     departamento: "",
+    pasillo: "",
+    estante: "",
+    caja: "",
   });
   const [permitirVentaSinStock, setPermitirVentaSinStock] = useState(false);
   const [imagenPath, setImagenPath] = useState<string | null>(null);
@@ -222,6 +225,9 @@ export default function EditarProductoPage() {
         distribuidor_nombre: p.distribuidor_nombre ?? "",
         distribuidor_comision_pct: p.distribuidor_comision_pct != null ? String(p.distribuidor_comision_pct) : "",
         departamento: p.ubicacion_deposito ?? "",
+        pasillo: p.ubicacion_pasillo ?? "",
+        estante: p.ubicacion_estante ?? "",
+        caja: p.ubicacion_caja ?? "",
       });
       setPermitirVentaSinStock(p.permitir_venta_sin_stock === true);
       setCodigoOriginal(p.codigo_barras ?? null);
@@ -387,6 +393,9 @@ export default function EditarProductoPage() {
         distribuidor_comision_pct: form.distribuidor_comision_pct.trim() === "" ? null : Math.min(Math.max(parseFloat(form.distribuidor_comision_pct) || 0, 0), 100),
         // Departamento → ubicacion_deposito (columna ya existe en DB).
         ubicacion_deposito: form.departamento.trim() || null,
+        ubicacion_pasillo: form.pasillo.trim() || null,
+        ubicacion_estante: form.estante.trim() || null,
+        ubicacion_caja: form.caja.trim() || null,
       };
       if (cambioCodigo) {
         updatePayload.codigo_barras = codigoIngresado || null;
@@ -973,7 +982,7 @@ export default function EditarProductoPage() {
             !!(form.codigo_oem || form.codigo_alternativo || form.marca_repuesto ||
                form.garantia_meses || permitirVentaSinStock ||
                form.distribuidor_nombre || form.distribuidor_comision_pct ||
-               form.departamento)
+               form.departamento || form.pasillo || form.estante || form.caja)
           }>
             <summary className="cursor-pointer text-sm font-semibold text-slate-700 hover:text-slate-900">
               Datos de autopartes (opcional)
@@ -1010,10 +1019,28 @@ export default function EditarProductoPage() {
                   Permitir vender aún sin stock disponible
                 </label>
               </div>
-              <div className="sm:col-span-2">
-                <label className={labelClass}>Departamento <span className="text-gray-400 font-normal">(ubicación física)</span></label>
+              <div className="sm:col-span-2 pt-1">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Ubicación física</p>
+              </div>
+              <div>
+                <label className={labelClass}>Departamento</label>
                 <input type="text" name="departamento" value={form.departamento} onChange={handleChange}
-                  placeholder="ej. PLAZA Q5, plaza F3" className={inputClass} />
+                  placeholder="ej. PLAZA Q5" className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Pasillo</label>
+                <input type="text" name="pasillo" value={form.pasillo} onChange={handleChange}
+                  placeholder="ej. A" className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Estante</label>
+                <input type="text" name="estante" value={form.estante} onChange={handleChange}
+                  placeholder="ej. 3" className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Caja</label>
+                <input type="text" name="caja" value={form.caja} onChange={handleChange}
+                  placeholder="ej. 12" className={inputClass} />
               </div>
               <div className="sm:col-span-2 pt-2">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Proveedor</p>
