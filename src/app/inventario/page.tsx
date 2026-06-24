@@ -63,6 +63,13 @@ export default function InventarioPage() {
   const [cargandoLista,    setCargandoLista]     = useState(true);
   const [soloStockBajo,    setSoloStockBajo]    = useState(false);
 
+  // Paginación client-side. Default 50 (chico, legible, no fríe al browser
+  // con 6000 filas). El usuario puede subir a 100 o "todos" si quiere ver
+  // todo en una sola vista.
+  type PageSize = 10 | 50 | 100 | "todos";
+  const [pageSize, setPageSize] = useState<PageSize>(50);
+  const [paginaActual, setPaginaActual] = useState(0);
+
   useEffect(() => {
     let cancelled = false;
     setCargandoLista(true);
@@ -173,6 +180,22 @@ export default function InventarioPage() {
     filtroTipo,
     tab,
   ]);
+
+  // Resetear la página actual cuando cambian filtros o tamaño de página.
+  useEffect(() => { setPaginaActual(0); }, [
+    filtroPorNombre, filtroPorSku, filtroPorCosto, filtroPorPrecio,
+    filtroValuacion, filtroUbicacion, soloStockBajo, filtroTipo, tab, pageSize,
+  ]);
+
+  // Slice paginado para renderizar sólo la página actual (la lista filtrada
+  // puede tener miles de filas; renderizar todas fríe al browser).
+  const totalPaginas = pageSize === "todos" ? 1 : Math.max(1, Math.ceil(productos.length / pageSize));
+  const paginaSegura = Math.min(paginaActual, totalPaginas - 1);
+  const productosPagina = useMemo(() => {
+    if (pageSize === "todos") return productos;
+    const start = paginaSegura * pageSize;
+    return productos.slice(start, start + pageSize);
+  }, [productos, paginaSegura, pageSize]);
 
   // Resumen del listado visible (por pestaña). Solo productos que controlan stock
   // entran en valorizado / bajo / disponibles; el resto (Menú sin control) se cuenta
@@ -423,7 +446,7 @@ export default function InventarioPage() {
             </thead>
 
             <tbody>
-              {productos.map((p) => {
+              {productosPagina.map((p) => {
                 const stockBajo = p.stock_actual <= p.stock_minimo;
                 const margen = calcularMargenVenta(p.costo_promedio, p.precio_venta);
                 // "Sin control" SOLO para Menú (vendible sin stock). Los insumos
@@ -506,6 +529,68 @@ export default function InventarioPage() {
 
           </table>
         </EdgeScrollArea>
+
+        {/* Controles de paginación */}
+        {productos.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 px-1 pt-4 text-sm">
+            <div className="flex items-center gap-2 text-slate-600">
+              <label htmlFor="page-size" className="text-xs text-slate-500">Mostrar</label>
+              <select
+                id="page-size"
+                value={String(pageSize)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setPageSize(v === "todos" ? "todos" : (parseInt(v) as 10 | 50 | 100));
+                }}
+                className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#4FAEB2]/30"
+              >
+                <option value="10">10</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="todos">Todos</option>
+              </select>
+              <span className="text-xs text-slate-400">
+                {pageSize === "todos"
+                  ? `${productos.length} producto(s)`
+                  : `${paginaSegura * pageSize + 1}–${Math.min((paginaSegura + 1) * pageSize, productos.length)} de ${productos.length}`}
+              </span>
+            </div>
+
+            {pageSize !== "todos" && totalPaginas > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setPaginaActual(0)}
+                  disabled={paginaSegura === 0}
+                  className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Primera página"
+                >«</button>
+                <button
+                  type="button"
+                  onClick={() => setPaginaActual((p) => Math.max(0, p - 1))}
+                  disabled={paginaSegura === 0}
+                  className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >‹ Anterior</button>
+                <span className="px-3 text-xs text-slate-600 tabular-nums">
+                  Página <span className="font-semibold">{paginaSegura + 1}</span> de {totalPaginas}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPaginaActual((p) => Math.min(totalPaginas - 1, p + 1))}
+                  disabled={paginaSegura >= totalPaginas - 1}
+                  className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >Siguiente ›</button>
+                <button
+                  type="button"
+                  onClick={() => setPaginaActual(totalPaginas - 1)}
+                  disabled={paginaSegura >= totalPaginas - 1}
+                  className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Última página"
+                >»</button>
+              </div>
+            )}
+          </div>
+        )}
 
       </div>
 
