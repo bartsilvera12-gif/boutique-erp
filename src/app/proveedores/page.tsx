@@ -47,7 +47,7 @@ export default function ProveedoresPage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Distribuidores</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Proveedores</h1>
           <p className="text-gray-600">
             Maestro de abastecimiento: categorías, condiciones de pago y vínculo futuro con compras.
           </p>
@@ -55,7 +55,7 @@ export default function ProveedoresPage() {
         <div className="flex flex-wrap gap-2">
           <ExportExcelButton url="/api/proveedores/export" />
           <ImportExcelButton
-            entidad="Distribuidores"
+            entidad="Proveedores"
             previewUrl="/api/proveedores/import/preview"
             commitUrl="/api/proveedores/import/commit"
             templateUrl="/api/proveedores/import/template"
@@ -96,7 +96,7 @@ export default function ProveedoresPage() {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-slate-600">
-                <th className="py-3 pr-4 font-semibold">Distribuidor</th>
+                <th className="py-3 pr-4 font-semibold">Proveedor</th>
                 <th className="py-3 pr-4 font-semibold">RUC</th>
                 <th className="py-3 pr-4 font-semibold">Contacto</th>
                 <th className="py-3 pr-4 font-semibold">Categorías</th>
