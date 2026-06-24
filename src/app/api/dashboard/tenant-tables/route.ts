@@ -19,13 +19,25 @@ type DateRange = { desde: string; hasta: string } | null;
 
 const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+/**
+ * Parsea ?desde=&hasta= (YYYY-MM-DD) y devuelve:
+ *   desde = "YYYY-MM-DDT00:00:00.000Z"  (inicio del día UTC)
+ *   hasta = "YYYY-MM-DDT23:59:59.999Z"  (fin del día UTC, inclusivo)
+ *
+ * Antes devolvía solo "YYYY-MM-DD". PostgREST/Postgres lo interpretaba como
+ * timestamp '00:00:00', así que `fecha <= 'YYYY-MM-DD'` excluía cualquier
+ * venta del mismo día con hora > 00:00 (ej. venta 17:42 del día actual).
+ */
 function parseDateRangeFromQuery(sp: URLSearchParams): DateRange {
-  const desde = sp.get("desde")?.trim() ?? "";
-  const hasta = sp.get("hasta")?.trim() ?? "";
-  if (!desde || !hasta) return null;
-  if (!YMD_RE.test(desde) || !YMD_RE.test(hasta)) return null;
-  if (desde > hasta) return null;
-  return { desde, hasta };
+  const desdeYmd = sp.get("desde")?.trim() ?? "";
+  const hastaYmd = sp.get("hasta")?.trim() ?? "";
+  if (!desdeYmd || !hastaYmd) return null;
+  if (!YMD_RE.test(desdeYmd) || !YMD_RE.test(hastaYmd)) return null;
+  if (desdeYmd > hastaYmd) return null;
+  return {
+    desde: `${desdeYmd}T00:00:00.000Z`,
+    hasta: `${hastaYmd}T23:59:59.999Z`,
+  };
 }
 
 /**
@@ -67,7 +79,7 @@ async function fallbackComprasPg(
     const t = quoteSchemaTable(schema, "compras");
     if (range) {
       const { rows } = await pool.query(
-        `SELECT * FROM ${t} WHERE empresa_id = $1::uuid AND fecha >= $2::date AND fecha <= $3::date`,
+        `SELECT * FROM ${t} WHERE empresa_id = $1::uuid AND fecha >= $2::timestamptz AND fecha <= $3::timestamptz`,
         [empresaId, range.desde, range.hasta]
       );
       return rows;
@@ -98,7 +110,7 @@ async function fallbackVentasPg(
     const t = quoteSchemaTable(schema, "ventas");
     if (range) {
       const { rows } = await pool.query(
-        `SELECT * FROM ${t} WHERE empresa_id = $1::uuid AND fecha >= $2::date AND fecha <= $3::date`,
+        `SELECT * FROM ${t} WHERE empresa_id = $1::uuid AND fecha >= $2::timestamptz AND fecha <= $3::timestamptz`,
         [empresaId, range.desde, range.hasta]
       );
       return rows;
