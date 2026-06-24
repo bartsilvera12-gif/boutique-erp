@@ -103,6 +103,7 @@ const ALLOWED_MENU_KEYS = new Set<string>([
   "configuracion",
   "inventario",
   "compras",
+  "buscador",
 ]);
 
 const MENU_STRUCTURE: MenuItem[] = [
@@ -135,6 +136,7 @@ const MENU_STRUCTURE: MenuItem[] = [
     href: "/dashboard/monitoreo",
     icon: Activity,
   },
+  { key: "buscador", slug: "buscador", label: "Consulta", href: "/buscador", icon: Search },
   { key: "ventas", slug: "ventas", label: "Caja", href: "/ventas", icon: ShoppingCart },
   { key: "presupuestos", slug: "presupuestos", label: "Presupuestos", href: "/presupuestos", icon: FileText },
   {
