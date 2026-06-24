@@ -44,6 +44,7 @@ type Row = Record<string, unknown>;
 interface ProductoImport {
   sku: string;
   nombre: string;
+  codigo_barras: string | null;
   costo_promedio: number;
   precio_venta: number;
   precio_mayorista: number | null;
@@ -51,6 +52,19 @@ interface ProductoImport {
   stock_actual: number;
   stock_minimo: number;
   unidad_medida: string;
+}
+
+/**
+ * Heurística para detectar EAN/UPC/barcodes en la columna "Código":
+ * - Sólo dígitos (sin paréntesis ni letras).
+ * - 12 o más caracteres.
+ * Si matchea, el "Código" es en realidad un código de barras y la columna
+ * "Producto" trae el SKU corto/interno (caso Patrón 2 del Excel).
+ */
+function esCodigoBarras(raw: string): boolean {
+  const s = raw.trim();
+  if (s.length < 12) return false;
+  return /^\d+$/.test(s);
 }
 
 /** Parsea valores tipo "₲22.500" → 22500. Cualquier no-dígito se descarta. */
@@ -73,10 +87,30 @@ function normSku(v: unknown): string {
 }
 
 function parseRow(r: Row): ProductoImport | { error: string; raw: Row } {
-  const sku = normSku(r["Código"] ?? r["Codigo"]);
-  const nombre = trim(r["Producto"]).toUpperCase();
-  if (!sku) return { error: "SKU vacío", raw: r };
-  if (!nombre) return { error: "Nombre vacío", raw: r };
+  const codigoRaw = trim(r["Código"] ?? r["Codigo"]);
+  const productoRaw = trim(r["Producto"]);
+  if (!codigoRaw && !productoRaw) return { error: "Fila vacía", raw: r };
+
+  let sku: string;
+  let nombre: string;
+  let codigoBarras: string | null;
+
+  if (esCodigoBarras(codigoRaw)) {
+    // Patrón 2: Código es EAN/UPC, Producto es el SKU corto/interno.
+    // SKU = Producto, codigo_barras = Código (limpio), nombre = Producto.
+    sku = productoRaw.toUpperCase();
+    nombre = productoRaw.toUpperCase();
+    codigoBarras = codigoRaw;
+  } else {
+    // Patrón 1 (mayoritario): Código es SKU interno, Producto es nombre.
+    sku = normSku(codigoRaw);
+    nombre = productoRaw.toUpperCase();
+    codigoBarras = null;
+  }
+
+  if (!sku) return { error: "SKU vacío tras parseo", raw: r };
+  if (!nombre) return { error: "Nombre vacío tras parseo", raw: r };
+
   const costo = parseGs(r["P. Costo"]);
   const venta = parseGs(r["P. Venta"]);
   const mayoreoRaw = parseGs(r["P. Mayoreo"]);
@@ -88,6 +122,7 @@ function parseRow(r: Row): ProductoImport | { error: string; raw: Row } {
   return {
     sku,
     nombre,
+    codigo_barras: codigoBarras,
     costo_promedio: costo,
     precio_venta: venta,
     precio_mayorista: mayoreo,
@@ -118,6 +153,8 @@ async function main() {
   }
   console.log(`• Filas válidas: ${ok.length}`);
   console.log(`• Filas con error parseo: ${erroresFila.length}`);
+  const invertidas = ok.filter((p) => p.codigo_barras !== null).length;
+  console.log(`• Filas con código de barras detectado (swap aplicado): ${invertidas}`);
 
   // Detectar duplicados de SKU dentro del Excel
   const skuCount = new Map<string, number>();
@@ -189,7 +226,7 @@ async function main() {
     let insertadas = 0;
     try {
       const COLS = [
-        "empresa_id", "sku", "nombre", "costo_promedio", "precio_venta", "precio_mayorista",
+        "empresa_id", "sku", "nombre", "codigo_barras", "costo_promedio", "precio_venta", "precio_mayorista",
         "ubicacion_deposito", "stock_actual", "stock_minimo", "unidad_medida",
         "metodo_valuacion", "activo", "es_vendible", "es_insumo", "controla_stock", "valorizado",
         "codigo_barras_interno", "factor_compra_receta", "tiempo_prep_minutos",
@@ -202,7 +239,7 @@ async function main() {
         for (const p of chunk) {
           placeholders.push(`(${COLS.map(() => `$${pi++}`).join(",")})`);
           values.push(
-            empresaId, p.sku, p.nombre, p.costo_promedio, p.precio_venta, p.precio_mayorista,
+            empresaId, p.sku, p.nombre, p.codigo_barras, p.costo_promedio, p.precio_venta, p.precio_mayorista,
             p.ubicacion_deposito, p.stock_actual, p.stock_minimo, p.unidad_medida,
             "CPP", true, true, false, true, true,
             false, 1, 0,
