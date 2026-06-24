@@ -508,6 +508,28 @@ export default function InventarioPage() {
             </thead>
 
             <tbody>
+              {cargandoLista && (
+                <tr>
+                  <td colSpan={10} className="py-16 text-center text-sm text-slate-400">
+                    <div className="inline-flex items-center gap-2">
+                      <svg className="h-4 w-4 animate-spin text-[#4FAEB2]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
+                        <path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                      </svg>
+                      Cargando productos…
+                    </div>
+                  </td>
+                </tr>
+              )}
+              {!cargandoLista && productosPagina.length === 0 && (
+                <tr>
+                  <td colSpan={10} className="py-16 text-center text-sm text-slate-400">
+                    {todos.length === 0
+                      ? "Todavía no cargaste productos. Probá con \"+ Nuevo producto\" o \"Importar Excel\"."
+                      : "No hay productos que coincidan con los filtros aplicados."}
+                  </td>
+                </tr>
+              )}
               {productosPagina.map((p) => {
                 const stockBajo = p.stock_actual <= p.stock_minimo;
                 const margen = calcularMargenVenta(p.costo_promedio, p.precio_venta);
