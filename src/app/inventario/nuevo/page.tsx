@@ -879,12 +879,12 @@ export default function NuevoProductoPage() {
 
               {/* Proveedor — 4 cols. Oculto para Menú (productos preparados no tienen proveedor). */}
               <div className={`md:col-span-4 min-w-0 ${tipoGastro === "menu" ? "hidden" : ""}`}>
-                <label className={labelClass}>Distribuidor principal</label>
+                <label className={labelClass}>Proveedor principal</label>
                 <SelectFromList
                   value={proveedorId}
                   onChange={setProveedorId}
                   options={proveedores.map((p) => ({ id: p.id, label: p.nombre }))}
-                  emptyShort="Sin distribuidores"
+                  emptyShort="Sin proveedores"
                 />
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <span className="text-xs text-gray-400 truncate">
@@ -1154,10 +1154,10 @@ export default function NuevoProductoPage() {
                 />
               </div>
               <div className="sm:col-span-2 pt-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Distribuidor</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Proveedor</p>
               </div>
               <div>
-                <label className={labelClass}>Nombre del distribuidor</label>
+                <label className={labelClass}>Nombre del proveedor</label>
                 <input
                   type="text"
                   name="distribuidor_nombre"
@@ -1168,7 +1168,7 @@ export default function NuevoProductoPage() {
                 />
               </div>
               <div>
-                <label className={labelClass}>% comisión al distribuidor</label>
+                <label className={labelClass}>% comisión al proveedor</label>
                 <input
                   type="number"
                   min={0}

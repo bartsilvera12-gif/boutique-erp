@@ -346,13 +346,13 @@ export default function InventarioPage() {
               value={filtroDistribuidor}
               onChange={(e) => setFiltroDistribuidor(e.target.value)}
               className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-[#4FAEB2]/30 max-w-[14rem] truncate"
-              title="Distribuidor"
+              title="Proveedor"
               disabled={distribuidoresDisponibles.length === 0}
             >
               <option value="">
                 {distribuidoresDisponibles.length === 0
-                  ? "Sin distribuidores cargados"
-                  : "Distribuidor: todos"}
+                  ? "Sin proveedores cargados"
+                  : "Proveedor: todos"}
               </option>
               {distribuidoresDisponibles.map((d) => (
                 <option key={d} value={d}>{d}</option>
@@ -566,7 +566,7 @@ export default function InventarioPage() {
                 <th className="py-3 pr-4 font-medium text-center">Stock actual</th>
                 <th className="py-3 pr-4 text-center font-medium hidden lg:table-cell">Stock Mín.</th>
                 <th className="py-3 pr-4 font-medium hidden lg:table-cell">Departamento</th>
-                <th className="py-3 pr-4 font-medium hidden lg:table-cell">Distribuidor</th>
+                <th className="py-3 pr-4 font-medium hidden lg:table-cell">Proveedor</th>
                 {tab !== "materia" && (
                   <th className="hidden py-3 pr-6 text-right font-medium lg:table-cell">
                     <span title="(precio - costo) / precio × 100">Margen s/venta</span>
