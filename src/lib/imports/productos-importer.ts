@@ -12,6 +12,16 @@ interface ProductoExistente {
   sku: string;
   codigo_barras: string | null;
   stock_actual: number;
+  // Snapshot completo para detectar UPDATEs no-op y saltarlos. Sin esto,
+  // re-importar el mismo Excel sobre 6k SKUs hace 6k UPDATEs idénticos
+  // y excede el timeout HTTP.
+  nombre: string;
+  costo_promedio: number;
+  precio_venta: number;
+  precio_mayorista: number | null;
+  stock_minimo: number;
+  unidad_medida: string;
+  ubicacion_deposito: string | null;
 }
 
 export interface ProductoParsed {
@@ -131,7 +141,13 @@ export async function buildResolverMaps(schemaRaw: string, empresaId: string): P
   const tU = quoteSchemaTable(schema, "inventario_ubicaciones");
 
   const [prods, cats, provs, ubis] = await Promise.all([
-    pool.query<ProductoExistente>(`SELECT id, sku, codigo_barras, stock_actual FROM ${tP} WHERE empresa_id=$1::uuid`, [empresaId]),
+    pool.query<ProductoExistente>(
+      `SELECT id, sku, codigo_barras, stock_actual,
+              nombre, costo_promedio, precio_venta, precio_mayorista,
+              stock_minimo, unidad_medida, ubicacion_deposito
+         FROM ${tP} WHERE empresa_id=$1::uuid`,
+      [empresaId]
+    ),
     pool.query<{ id: string; nombre: string }>(`SELECT id, nombre FROM ${tC} WHERE empresa_id=$1::uuid AND activo=true`, [empresaId]),
     pool.query<{ id: string; nombre: string }>(`SELECT id, nombre FROM ${tPr} WHERE empresa_id=$1::uuid`, [empresaId]),
     pool.query<{ id: string; nombre: string; codigo: string | null }>(`SELECT id, nombre, codigo FROM ${tU} WHERE empresa_id=$1::uuid AND activo=true`, [empresaId]),
@@ -140,7 +156,17 @@ export async function buildResolverMaps(schemaRaw: string, empresaId: string): P
   const productosBySku = new Map<string, ProductoExistente>();
   const productosByCodigo = new Map<string, ProductoExistente>();
   for (const p of prods.rows) {
-    const normalized: ProductoExistente = { id: p.id, sku: p.sku, codigo_barras: p.codigo_barras, stock_actual: Number(p.stock_actual) };
+    const normalized: ProductoExistente = {
+      id: p.id, sku: p.sku, codigo_barras: p.codigo_barras,
+      stock_actual: Number(p.stock_actual),
+      nombre: p.nombre ?? "",
+      costo_promedio: Number(p.costo_promedio ?? 0),
+      precio_venta: Number(p.precio_venta ?? 0),
+      precio_mayorista: p.precio_mayorista == null ? null : Number(p.precio_mayorista),
+      stock_minimo: Number(p.stock_minimo ?? 0),
+      unidad_medida: p.unidad_medida ?? "",
+      ubicacion_deposito: p.ubicacion_deposito ?? null,
+    };
     if (p.sku) productosBySku.set(p.sku.toUpperCase(), normalized);
     if (p.codigo_barras) productosByCodigo.set(p.codigo_barras.toUpperCase(), normalized);
   }
@@ -403,6 +429,25 @@ export async function commitProductos(
             || (p.codigo_barras && maps.productosByCodigo.get(p.codigo_barras))
             || null;
           const stockAnterior = Number(existente?.stock_actual ?? 0);
+
+          // No-op detection: si todos los campos relevantes son idénticos
+          // a lo que ya está en DB, no hacemos ni UPDATE ni movimiento.
+          // Esto es CRÍTICO para imports masivos donde el Excel no cambió
+          // (caso de Felix Bogado: 6k SKUs re-importados sin cambios).
+          if (existente) {
+            const igual =
+              existente.nombre === p.nombre &&
+              Number(existente.costo_promedio) === Number(p.costo_promedio) &&
+              Number(existente.precio_venta) === Number(p.precio_venta) &&
+              Number(existente.precio_mayorista ?? 0) === Number(p.precio_mayorista ?? 0) &&
+              Number(existente.stock_actual) === Number(p.stock_actual) &&
+              Number(existente.stock_minimo) === Number(p.stock_minimo) &&
+              (existente.unidad_medida ?? "") === (p.unidad_medida ?? "") &&
+              (existente.ubicacion_deposito ?? "") === (p.ubicacion_deposito ?? "") &&
+              (existente.codigo_barras ?? "") === (p.codigo_barras ?? "");
+            if (igual) { out.skipped++; return; }
+          }
+
           await pool.query(
             `UPDATE ${tP} SET
                nombre=$1, sku=$2, codigo_barras=NULLIF($3,''),
