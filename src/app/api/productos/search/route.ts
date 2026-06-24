@@ -34,7 +34,11 @@ interface ProductoSearchHit {
 }
 
 const DEFAULT_LIMIT = 30;
-const MAX_LIMIT = 100;
+// Subido a 500: con catálogos grandes (autopartes ~6000 productos), un cap de 100
+// hace que el picker de venta parezca "cortado" cuando el usuario abre el modal
+// sin tipear. El frontend usa límites altos cuando renderiza una lista
+// navegable; el búsqueda-as-you-type sigue siendo el camino feliz para >500.
+const MAX_LIMIT = 500;
 
 /** Escape pattern para ILIKE evitando interpretación de % y _ del usuario. */
 function escapeIlikePattern(s: string): string {

@@ -139,7 +139,10 @@ export default function ProductPickerModal({
         const url = new URL("/api/productos/search", window.location.origin);
         if (q.trim().length >= 2) url.searchParams.set("q", q.trim());
         if (vehiculoFiltro.trim().length >= 2) url.searchParams.set("vehiculo", vehiculoFiltro.trim());
-        url.searchParams.set("limit", "50");
+        // 500 = MAX_LIMIT del endpoint. Para catálogos > 500 productos el camino
+        // feliz es tipear en el buscador (filtra server-side); el cap es solo
+        // para que el listado inicial sin búsqueda no sienta cortado.
+        url.searchParams.set("limit", "500");
         const res = await fetch(url.toString(), { credentials: "include" });
         const json = await res.json();
         if (!res.ok || !json?.success) {
@@ -262,6 +265,11 @@ export default function ProductPickerModal({
             {!loading && !error && items.length === 0 && (
               <div className="p-10 text-center text-sm text-slate-400">
                 {q.trim().length >= 2 ? `Sin resultados para "${q}"` : "Escribí para buscar productos"}
+              </div>
+            )}
+            {!loading && !error && items.length >= 500 && q.trim().length < 2 && (
+              <div className="m-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                Mostrando los primeros 500 productos del catálogo. <strong>Tipeá en el buscador</strong> (nombre, SKU, código OEM…) para encontrar productos específicos.
               </div>
             )}
             {!loading && !error && items.length > 0 && (
