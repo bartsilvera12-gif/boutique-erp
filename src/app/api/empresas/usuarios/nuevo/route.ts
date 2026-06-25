@@ -104,6 +104,35 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Solo un administrador de empresa puede crear usuarios." }, { status: 403 });
     }
 
+    // Límite de plan: el admin de la empresa + 3 adicionales = 4 usuarios totales.
+    // Se cuentan activos para esta empresa; los desactivados (activo=false) no suman.
+    // Si el email ya existe (re-alta), no choca con el límite porque el conteo
+    // se hace ANTES de createUser y los existentes se reutilizan.
+    const LIMITE_USUARIOS_EMPRESA = 4;
+    const { count: usuariosActuales, error: countErr } = await supabase
+      .from("usuarios")
+      .select("id", { count: "exact", head: true })
+      .eq("empresa_id", empresaId)
+      .eq("activo", true);
+    if (countErr) {
+      return NextResponse.json({ error: `No se pudo verificar el cupo de usuarios: ${countErr.message}` }, { status: 500 });
+    }
+    if ((usuariosActuales ?? 0) >= LIMITE_USUARIOS_EMPRESA) {
+      // Excepción: si el email viene ya existente para esta empresa, el endpoint
+      // hace UPDATE en vez de INSERT — no estamos sumando un usuario nuevo.
+      const { data: yaExiste } = await supabase
+        .from("usuarios")
+        .select("id")
+        .eq("empresa_id", empresaId)
+        .eq("email", email)
+        .maybeSingle();
+      if (!yaExiste) {
+        return NextResponse.json({
+          error: `Límite de usuarios alcanzado (${LIMITE_USUARIOS_EMPRESA}). Desactivá un usuario antes de crear uno nuevo.`,
+        }, { status: 409 });
+      }
+    }
+
     let authUserId: string | null = null;
     let vinculado = false;
 

@@ -104,6 +104,7 @@ const ALLOWED_MENU_KEYS = new Set<string>([
   "inventario",
   "compras",
   "buscador",
+  "usuarios",
 ]);
 
 const MENU_STRUCTURE: MenuItem[] = [
