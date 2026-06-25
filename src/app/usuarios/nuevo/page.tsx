@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchWithSupabaseSession } from "@/lib/api/fetch-with-supabase-session";
 import {
@@ -11,6 +11,8 @@ import {
   type UsuarioFormValues,
 } from "@/components/usuarios/UsuarioForm";
 
+type ModuloEmpresa = { id: string; nombre: string; slug: string };
+
 export default function NuevoUsuarioPage() {
   const router = useRouter();
 
@@ -19,6 +21,30 @@ export default function NuevoUsuarioPage() {
   const [showPwd2, setShowPwd2] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
+
+  // Módulos activos de la empresa (para mostrar checkboxes "Pantallas que puede ver").
+  const [modulosEmpresa, setModulosEmpresa] = useState<ModuloEmpresa[]>([]);
+  const [moduloIds, setModuloIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetchWithSupabaseSession("/api/empresas/module-access", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j) => {
+        const ms = Array.isArray(j?.modulos) ? (j.modulos as ModuloEmpresa[]) : [];
+        setModulosEmpresa(ms);
+      })
+      .catch(() => setModulosEmpresa([]));
+  }, []);
+
+  function toggleModulo(id: string) {
+    setModuloIds((prev) => prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]);
+  }
+
+  // El rol "admin" tiene acceso a todo por definición; solo mostramos el bloque
+  // de selección si es un nivel acotado (supervisor / usuario).
+  const rolFinal = rolFromNivelForm(form.nivel);
+  const esRolAdmin = ["admin", "administrador", "super_admin"].includes(rolFinal);
+  const mostrarModulos = !esRolAdmin && modulosEmpresa.length > 0;
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value, type } = e.target;
@@ -83,7 +109,8 @@ export default function NuevoUsuarioPage() {
           porcentaje_comision: pct.trim() || undefined,
           ips: form.ips,
           area: form.area,
-          rol: rolFromNivelForm(form.nivel),
+          rol: rolFinal,
+          modulo_ids: mostrarModulos ? moduloIds : undefined,
         }),
       });
       const json = await res.json();
@@ -136,6 +163,45 @@ export default function NuevoUsuarioPage() {
           showPwd2={showPwd2}
           setShowPwd2={setShowPwd2}
         />
+
+        {/* Pantallas que puede ver. Solo para roles no-admin (admin ve todo). */}
+        {mostrarModulos && (
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-3">
+              <h3 className="text-sm font-semibold text-slate-900">Pantallas que puede ver</h3>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Marcá los módulos que esta persona puede usar. Si no marcás nada, no verá ningún módulo en su sidebar.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {modulosEmpresa.map((m) => {
+                const checked = moduloIds.includes(m.id);
+                return (
+                  <label
+                    key={m.id}
+                    className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors ${
+                      checked ? "border-[#4FAEB2] bg-[#4FAEB2]/5" : "border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleModulo(m.id)}
+                      className="rounded border-slate-300 text-[#4FAEB2] focus:ring-[#4FAEB2]/20"
+                    />
+                    <span className="flex-1 text-sm font-medium text-slate-800">{m.nombre}</span>
+                    <span className="text-[10px] font-mono text-slate-400">{m.slug}</span>
+                  </label>
+                );
+              })}
+            </div>
+            {moduloIds.length === 0 && (
+              <p className="mt-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                ⚠️ Sin pantallas marcadas, el usuario solo podrá iniciar sesión pero no verá módulos.
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center gap-3">
           <button

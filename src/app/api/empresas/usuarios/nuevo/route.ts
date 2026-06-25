@@ -207,16 +207,28 @@ export async function POST(req: Request) {
 
     await supabase.from("usuario_modulos").delete().eq("usuario_id", targetId);
     if (!esRolAdminEmpresa(rol)) {
+      // modulo_ids del body: lista explícita de módulos a asignar (puede ser []).
+      // Si NO viene → mantener compat histórico: asignar todos los activos.
+      const bodyModuloIds: string[] = Array.isArray(body.modulo_ids)
+        ? (body.modulo_ids as unknown[]).filter((x): x is string => typeof x === "string" && x.trim() !== "")
+        : [];
+      const usarBody = Array.isArray(body.modulo_ids);
+
       const { data: emActivos } = await supabase
         .from("empresa_modulos")
         .select("modulo_id")
         .eq("empresa_id", empresaId)
         .eq("activo", true);
-      if (emActivos && emActivos.length > 0) {
-        const umRows = emActivos.map((r) => ({
-          usuario_id: targetId,
-          modulo_id: r.modulo_id as string,
-        }));
+      const idsActivos = new Set((emActivos ?? []).map((r) => r.modulo_id as string));
+
+      // Si el form mandó modulo_ids, filtramos contra activos de la empresa
+      // (no se puede asignar un módulo que la empresa no tiene habilitado).
+      const idsFinal = usarBody
+        ? bodyModuloIds.filter((id) => idsActivos.has(id))
+        : [...idsActivos];
+
+      if (idsFinal.length > 0) {
+        const umRows = idsFinal.map((mid) => ({ usuario_id: targetId, modulo_id: mid }));
         const { error: errUm } = await supabase.from("usuario_modulos").insert(umRows);
         if (errUm) {
           return NextResponse.json(
