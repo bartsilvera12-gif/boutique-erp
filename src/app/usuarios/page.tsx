@@ -51,6 +51,11 @@ export default function UsuariosPage() {
     return texto.includes(q);
   });
 
+  // Límite del plan: 4 totales (admin + 3 adicionales). Mismo número que
+  // valida el server en /api/empresas/usuarios/nuevo. Solo cuentan activos.
+  const LIMITE_USUARIOS = 4;
+  const activosCount = usuarios.filter((u) => (u.estado ?? "").toLowerCase() === "activo").length;
+
   if (cargando) {
     return (
       <div className="space-y-6">
@@ -74,17 +79,42 @@ export default function UsuariosPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Usuarios</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Usuarios de tu empresa</p>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Usuarios de tu empresa ·
+            <span
+              className={`ml-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                activosCount >= LIMITE_USUARIOS
+                  ? "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
+                  : "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+              }`}
+            >
+              {activosCount} / {LIMITE_USUARIOS} activos
+            </span>
+          </p>
         </div>
-        <Link
-          href="/usuarios/nuevo"
-          className="inline-flex items-center gap-2 bg-[#0EA5E9] hover:bg-[#0284C7] text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm active:scale-95"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-            <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
-          </svg>
-          Nuevo usuario
-        </Link>
+        {activosCount >= LIMITE_USUARIOS ? (
+          <button
+            type="button"
+            disabled
+            title={`Llegaste al límite de ${LIMITE_USUARIOS} usuarios activos. Desactivá uno antes de crear otro.`}
+            className="inline-flex items-center gap-2 bg-slate-200 text-slate-500 text-sm font-semibold px-4 py-2 rounded-lg cursor-not-allowed"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+              <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+            </svg>
+            Cupo lleno
+          </button>
+        ) : (
+          <Link
+            href="/usuarios/nuevo"
+            className="inline-flex items-center gap-2 bg-[#0EA5E9] hover:bg-[#0284C7] text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm active:scale-95"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+              <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+            </svg>
+            Nuevo usuario
+          </Link>
+        )}
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">

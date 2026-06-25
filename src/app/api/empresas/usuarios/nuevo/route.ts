@@ -113,7 +113,7 @@ export async function POST(req: Request) {
       .from("usuarios")
       .select("id", { count: "exact", head: true })
       .eq("empresa_id", empresaId)
-      .eq("activo", true);
+      .eq("estado", "activo");
     if (countErr) {
       return NextResponse.json({ error: `No se pudo verificar el cupo de usuarios: ${countErr.message}` }, { status: 500 });
     }
