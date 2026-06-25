@@ -90,7 +90,7 @@ function adminEmpresasMatchesQuery(queryRaw: string): boolean {
  * Solo estos keys se muestran en el sidebar; cualquier otro queda oculto.
  * Mantener sincronizado si se piden nuevos módulos visibles para esta instancia.
  */
-const ALLOWED_MENU_KEYS = new Set<string>([
+export const ALLOWED_MENU_KEYS = new Set<string>([
   "dashboard",
   "clientes",
   "ventas",

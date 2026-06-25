@@ -10,6 +10,7 @@ import {
   UsuarioFormFields,
   type UsuarioFormValues,
 } from "@/components/usuarios/UsuarioForm";
+import { ALLOWED_MENU_KEYS } from "@/components/layout/Sidebar";
 
 type ModuloEmpresa = { id: string; nombre: string; slug: string };
 
@@ -31,7 +32,10 @@ export default function NuevoUsuarioPage() {
       .then((r) => r.json())
       .then((j) => {
         const ms = Array.isArray(j?.modulos) ? (j.modulos as ModuloEmpresa[]) : [];
-        setModulosEmpresa(ms);
+        // Filtrar al allowlist del sidebar para no mostrar módulos heredados
+        // del repo base (Marketing, CRM, Omnicanal, etc.) que en esta instancia
+        // no están visibles.
+        setModulosEmpresa(ms.filter((m) => ALLOWED_MENU_KEYS.has(m.slug)));
       })
       .catch(() => setModulosEmpresa([]));
   }, []);
