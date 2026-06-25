@@ -50,8 +50,6 @@ export default function NuevoProductoPage() {
     codigo_alternativo: "",
     marca_repuesto: "",
     garantia_meses: "",
-    distribuidor_nombre: "",
-    distribuidor_comision_pct: "",
     departamento: "",
     pasillo: "",
     estante: "",
@@ -364,8 +362,6 @@ export default function NuevoProductoPage() {
           marca_repuesto: form.marca_repuesto.trim() || null,
           garantia_meses: form.garantia_meses.trim() === "" ? null : Math.max(parseInt(form.garantia_meses) || 0, 0),
           permitir_venta_sin_stock: permitirVentaSinStock,
-          distribuidor_nombre: form.distribuidor_nombre.trim() || null,
-          distribuidor_comision_pct: form.distribuidor_comision_pct.trim() === "" ? null : Math.min(Math.max(parseFloat(form.distribuidor_comision_pct) || 0, 0), 100),
           // Departamento → se mapea a ubicacion_deposito (columna existente en DB).
           ubicacion_deposito: form.departamento.trim() || null,
           ubicacion_pasillo: form.pasillo.trim() || null,
@@ -1192,34 +1188,6 @@ export default function NuevoProductoPage() {
                   value={form.caja}
                   onChange={handleChange}
                   placeholder="ej. 12"
-                  className={inputClass}
-                />
-              </div>
-              <div className="sm:col-span-2 pt-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Proveedor</p>
-              </div>
-              <div>
-                <label className={labelClass}>Nombre del proveedor</label>
-                <input
-                  type="text"
-                  name="distribuidor_nombre"
-                  value={form.distribuidor_nombre}
-                  onChange={handleChange}
-                  placeholder="ej. BOSCH ARGENTINA"
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>% comisión al proveedor</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  step={0.01}
-                  name="distribuidor_comision_pct"
-                  value={form.distribuidor_comision_pct}
-                  onChange={handleChange}
-                  placeholder="0"
                   className={inputClass}
                 />
               </div>

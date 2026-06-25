@@ -59,8 +59,6 @@ export default function EditarProductoPage() {
     codigo_alternativo: "",
     marca_repuesto: "",
     garantia_meses: "",
-    distribuidor_nombre: "",
-    distribuidor_comision_pct: "",
     departamento: "",
     pasillo: "",
     estante: "",
@@ -222,8 +220,6 @@ export default function EditarProductoPage() {
         codigo_alternativo: p.codigo_alternativo ?? "",
         marca_repuesto: p.marca_repuesto ?? "",
         garantia_meses: p.garantia_meses != null ? String(p.garantia_meses) : "",
-        distribuidor_nombre: p.distribuidor_nombre ?? "",
-        distribuidor_comision_pct: p.distribuidor_comision_pct != null ? String(p.distribuidor_comision_pct) : "",
         departamento: p.ubicacion_deposito ?? "",
         pasillo: p.ubicacion_pasillo ?? "",
         estante: p.ubicacion_estante ?? "",
@@ -389,8 +385,6 @@ export default function EditarProductoPage() {
         marca_repuesto: form.marca_repuesto.trim() || null,
         garantia_meses: form.garantia_meses.trim() === "" ? null : Math.max(parseInt(form.garantia_meses) || 0, 0),
         permitir_venta_sin_stock: permitirVentaSinStock,
-        distribuidor_nombre: form.distribuidor_nombre.trim() || null,
-        distribuidor_comision_pct: form.distribuidor_comision_pct.trim() === "" ? null : Math.min(Math.max(parseFloat(form.distribuidor_comision_pct) || 0, 0), 100),
         // Departamento → ubicacion_deposito (columna ya existe en DB).
         ubicacion_deposito: form.departamento.trim() || null,
         ubicacion_pasillo: form.pasillo.trim() || null,
@@ -981,7 +975,6 @@ export default function EditarProductoPage() {
           <details className="rounded-lg border border-slate-200 bg-white p-4 open:shadow-sm" open={
             !!(form.codigo_oem || form.codigo_alternativo || form.marca_repuesto ||
                form.garantia_meses || permitirVentaSinStock ||
-               form.distribuidor_nombre || form.distribuidor_comision_pct ||
                form.departamento || form.pasillo || form.estante || form.caja)
           }>
             <summary className="cursor-pointer text-sm font-semibold text-slate-700 hover:text-slate-900">
@@ -1041,20 +1034,6 @@ export default function EditarProductoPage() {
                 <label className={labelClass}>Caja</label>
                 <input type="text" name="caja" value={form.caja} onChange={handleChange}
                   placeholder="ej. 12" className={inputClass} />
-              </div>
-              <div className="sm:col-span-2 pt-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Proveedor</p>
-              </div>
-              <div>
-                <label className={labelClass}>Nombre del proveedor</label>
-                <input type="text" name="distribuidor_nombre" value={form.distribuidor_nombre} onChange={handleChange}
-                  placeholder="ej. BOSCH ARGENTINA" className={inputClass} />
-              </div>
-              <div>
-                <label className={labelClass}>% comisión al proveedor</label>
-                <input type="number" min={0} max={100} step={0.01} name="distribuidor_comision_pct"
-                  value={form.distribuidor_comision_pct} onChange={handleChange}
-                  placeholder="0" className={inputClass} />
               </div>
             </div>
           </details>
