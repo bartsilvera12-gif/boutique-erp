@@ -9,6 +9,7 @@ import ImportExcelButton from "@/components/ui/ImportExcelButton";
 import EdgeScrollArea from "@/components/ui/EdgeScrollArea";
 import StatCard from "@/components/ui/StatCard";
 import { useIsAdmin } from "@/lib/auth/use-is-admin";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 const inputFilterClass =
   "border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-[#0EA5E9] focus:outline-none";
@@ -100,20 +101,23 @@ export default function InventarioPage() {
    * desaparece del listing (la API filtra por activo=true) pero queda en DB
    * preservando historial de ventas/compras.
    */
-  async function eliminarProducto(p: Producto) {
-    const ok = window.confirm(
-      `¿Borrar el producto "${p.nombre}"?\n\n` +
-      `SKU: ${p.sku} · Stock actual: ${p.stock_actual}\n\n` +
-      `Se ocultará del listado. El historial de ventas/compras se conserva.`
-    );
-    if (!ok) return;
+  const [borrarTarget, setBorrarTarget] = useState<Producto | null>(null);
+  const [borrarLoading, setBorrarLoading] = useState(false);
+  const [borrarError, setBorrarError] = useState<string | null>(null);
+
+  async function confirmarBorrado() {
+    if (!borrarTarget) return;
+    setBorrarLoading(true); setBorrarError(null);
     try {
-      const r = await fetch(`/api/productos/${p.id}`, { method: "DELETE", credentials: "include" });
+      const r = await fetch(`/api/productos/${borrarTarget.id}`, { method: "DELETE", credentials: "include" });
       const j = await r.json().catch(() => ({}));
       if (!r.ok || !j?.success) throw new Error(j?.error ?? `Error ${r.status}`);
+      setBorrarTarget(null);
       setRefreshKey((k) => k + 1);
     } catch (e) {
-      window.alert(e instanceof Error ? e.message : "No se pudo borrar el producto.");
+      setBorrarError(e instanceof Error ? e.message : "No se pudo borrar el producto.");
+    } finally {
+      setBorrarLoading(false);
     }
   }
 
@@ -699,7 +703,7 @@ export default function InventarioPage() {
                         </Link>
                         <button
                           type="button"
-                          onClick={() => eliminarProducto(p)}
+                          onClick={() => { setBorrarTarget(p); setBorrarError(null); }}
                           className="inline-flex items-center justify-center min-h-[40px] rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:border-red-300 hover:bg-red-50 transition-colors"
                         >
                           Borrar
@@ -777,6 +781,18 @@ export default function InventarioPage() {
         )}
 
       </div>
+
+      <ConfirmModal
+        open={borrarTarget != null}
+        title="Borrar producto"
+        message={borrarTarget ? `¿Borrar "${borrarTarget.nombre}"?\nSKU: ${borrarTarget.sku} · Stock actual: ${borrarTarget.stock_actual}` : ""}
+        hint={borrarError ?? "Se ocultará del listado. El historial de ventas/compras se conserva."}
+        confirmLabel="Sí, borrar"
+        variant="danger"
+        loading={borrarLoading}
+        onConfirm={confirmarBorrado}
+        onClose={() => { if (!borrarLoading) { setBorrarTarget(null); setBorrarError(null); } }}
+      />
 
     </div>
   );

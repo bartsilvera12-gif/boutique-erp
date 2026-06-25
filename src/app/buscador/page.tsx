@@ -18,6 +18,7 @@ import { fetchWithSupabaseSession } from "@/lib/api/fetch-with-supabase-session"
 import { getClientes } from "@/lib/clientes/storage";
 import type { Cliente } from "@/lib/clientes/types";
 import { Search, MapPin, Car, Trash2, Send, Loader2, CheckCircle2, Clock, XCircle } from "lucide-react";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 type ProductoHit = {
   id: string;
@@ -231,22 +232,25 @@ export default function BuscadorPage() {
     [cart]
   );
 
-  async function cancelarPedido(p: MiPedido) {
-    const ok = window.confirm(
-      `¿Cancelar el pedido "${p.titulo}"?\n\n` +
-      `Total: ${fmtGs(p.total_estimado)} · ${p.items_count} item(s)\n\n` +
-      `El cajero ya no lo va a ver. Esta acción no se puede deshacer.`
-    );
-    if (!ok) return;
+  const [cancelTarget, setCancelTarget] = useState<MiPedido | null>(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+
+  async function confirmarCancelacion() {
+    if (!cancelTarget) return;
+    setCancelLoading(true); setCancelError(null);
     try {
-      const r = await fetchWithSupabaseSession(`/api/pedidos-caja/${p.id}?motivo=cancelado+por+vendedor`, {
+      const r = await fetchWithSupabaseSession(`/api/pedidos-caja/${cancelTarget.id}?motivo=cancelado+por+vendedor`, {
         method: "DELETE",
       });
       const j = await r.json();
       if (!r.ok || !j?.success) throw new Error(j?.error ?? `Error ${r.status}`);
+      setCancelTarget(null);
       void refreshMisPedidos();
     } catch (e) {
-      window.alert(e instanceof Error ? e.message : "No se pudo cancelar el pedido.");
+      setCancelError(e instanceof Error ? e.message : "No se pudo cancelar el pedido.");
+    } finally {
+      setCancelLoading(false);
     }
   }
 
@@ -533,7 +537,7 @@ export default function BuscadorPage() {
                     {p.estado_facturacion === "pendiente_caja" ? (
                       <button
                         type="button"
-                        onClick={() => cancelarPedido(p)}
+                        onClick={() => { setCancelTarget(p); setCancelError(null); }}
                         className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-white px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
                       >
                         <XCircle className="h-3 w-3" />
@@ -549,6 +553,19 @@ export default function BuscadorPage() {
           </table>
         </div>
       </div>
+
+      <ConfirmModal
+        open={cancelTarget != null}
+        title="Cancelar pedido"
+        message={cancelTarget ? `¿Cancelar el pedido "${cancelTarget.titulo}"?\nTotal: ${fmtGs(cancelTarget.total_estimado)} · ${cancelTarget.items_count} item(s)` : ""}
+        hint={cancelError ?? "El cajero ya no lo va a ver. Esta acción no se puede deshacer."}
+        confirmLabel="Sí, cancelar pedido"
+        cancelLabel="Volver"
+        variant="danger"
+        loading={cancelLoading}
+        onConfirm={confirmarCancelacion}
+        onClose={() => { if (!cancelLoading) { setCancelTarget(null); setCancelError(null); } }}
+      />
     </div>
   );
 }
