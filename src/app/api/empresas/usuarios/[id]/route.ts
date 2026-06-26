@@ -630,3 +630,89 @@ export async function PATCH(
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
+
+/**
+ * DELETE /api/empresas/usuarios/[id] — soft delete (estado='inactivo', activo=false).
+ *
+ * No borra el row físico para preservar referencias históricas (created_by en
+ * ventas/compras/movimientos). Saca al usuario del listado y libera el cupo
+ * del plan (el conteo del límite filtra por estado='activo').
+ *
+ * Reglas de seguridad:
+ *  - Solo admin de la empresa (o super_admin).
+ *  - No te podés borrar a vos mismo.
+ *  - No se puede borrar el último admin activo de la empresa.
+ */
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !serviceKey) {
+      return NextResponse.json({ error: "Config no disponible" }, { status: 500 });
+    }
+
+    const authR = await getServiceAuthUsuario(request);
+    if (!authR.ok) return NextResponse.json({ error: "No autenticado" }, { status: authR.status });
+    if (!authR.catalogUsuario) return NextResponse.json({ error: "Perfil no encontrado" }, { status: 403 });
+
+    const supabase = createClient(url, serviceKey, { ...supabaseServiceRoleClientOptions });
+    const currentUser = {
+      id: authR.catalogUsuario.id as string,
+      empresa_id: authR.catalogUsuario.empresa_id ?? undefined,
+      rol: authR.catalogUsuario.rol ?? undefined,
+    };
+
+    if (currentUser.rol !== "super_admin" && !["admin", "administrador"].includes((currentUser.rol ?? "").trim())) {
+      return NextResponse.json({ error: "Solo el administrador puede borrar usuarios." }, { status: 403 });
+    }
+
+    if (currentUser.id === id) {
+      return NextResponse.json({ error: "No podés borrar tu propio usuario." }, { status: 409 });
+    }
+
+    const { data: target, error: getErr } = await supabase
+      .from("usuarios")
+      .select("id, empresa_id, rol, estado, nombre")
+      .eq("id", id)
+      .single();
+    if (getErr || !target) {
+      return NextResponse.json({ error: "Usuario no encontrado." }, { status: 404 });
+    }
+
+    if (currentUser.rol !== "super_admin" && target.empresa_id !== currentUser.empresa_id) {
+      return NextResponse.json({ error: "Sin permiso para borrar este usuario." }, { status: 403 });
+    }
+
+    // No borrar al último admin activo de la empresa.
+    if (esRolAdminEmpresa(target.rol as string)) {
+      const { count: adminsActivos } = await supabase
+        .from("usuarios")
+        .select("id", { count: "exact", head: true })
+        .eq("empresa_id", target.empresa_id)
+        .eq("estado", "activo")
+        .in("rol", ["admin", "administrador"]);
+      if ((adminsActivos ?? 0) <= 1) {
+        return NextResponse.json({
+          error: "No se puede borrar al último administrador activo. Asigná otro admin primero.",
+        }, { status: 409 });
+      }
+    }
+
+    const { error: updErr } = await supabase
+      .from("usuarios")
+      .update({ estado: "inactivo", activo: false })
+      .eq("id", id);
+    if (updErr) {
+      return NextResponse.json({ error: updErr.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Error";
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}
