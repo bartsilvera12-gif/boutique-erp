@@ -2,27 +2,18 @@
 
 import {
   BarChart3,
-  CalendarClock,
   FileText,
-  GitBranch,
-  Inbox,
   Landmark,
-  LayoutGrid,
-  MessageCircle,
-  Percent,
   PieChart,
   Receipt,
   SlidersHorizontal,
-  UsersRound,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { SettingsModuleCard } from "@/components/config/SettingsModuleCard";
 import { getConfig } from "@/lib/config/storage";
-import { getMisModulos } from "@/lib/empresas/actions";
 
 export default function ConfiguracionPage() {
   const [meta, setMeta] = useState<{ updated_at?: string; updated_by?: string } | null>(null);
-  const [hasConversacionesModulo, setHasConversacionesModulo] = useState(false);
 
   useEffect(() => {
     try {
@@ -32,19 +23,6 @@ export default function ConfiguracionPage() {
       setMeta({});
     }
   }, []);
-
-  useEffect(() => {
-    getMisModulos()
-      .then((mods) => {
-        const slugs = new Set(mods.map((m) => m.slug));
-        setHasConversacionesModulo(slugs.has("conversaciones") || slugs.has("omnicanal"));
-      })
-      .catch(() => setHasConversacionesModulo(false));
-  }, []);
-
-  const omnicanalModuleBadge = hasConversacionesModulo
-    ? ({ label: "Activo", tone: "active" as const })
-    : ({ label: "Inactivo", tone: "inactive" as const });
 
   const editorBadge = { label: "Editor", tone: "neutral" as const };
 
@@ -130,16 +108,6 @@ export default function ConfiguracionPage() {
           </li>
           <li>
             <SettingsModuleCard
-              title="Comisiones"
-              subtitle="GLOBAL · COMERCIAL"
-              description="Política base, escalas por monto y parámetros del módulo de comisiones."
-              icon={Percent}
-              badge={editorBadge}
-              href="/configuracion/comisiones"
-            />
-          </li>
-          <li>
-            <SettingsModuleCard
               title="Vistas del dashboard"
               subtitle="EMPRESA · TABLERO PRINCIPAL"
               description="El inicio ofrece varias pestañas según la organización. Configurá qué aplica a la empresa (admin global) y qué ve cada usuario (admin+usuarios) desde el hub dedicado; no hace falta adivinar la pantalla."
@@ -147,76 +115,6 @@ export default function ConfiguracionPage() {
               badge={{ label: "Empresa / usuarios", tone: "neutral" as const }}
               href="/configuracion/vistas-dashboard"
               actionLabel="Configurar"
-            />
-          </li>
-          <li>
-            <SettingsModuleCard
-              title="Configuración de Tableros"
-              subtitle="GLOBAL · CRM / PROYECTOS"
-              description="Configurá etapas, columnas y tableros comerciales de la empresa."
-              icon={LayoutGrid}
-              badge={editorBadge}
-              href="/configuracion/tableros"
-            />
-          </li>
-          <li>
-            <SettingsModuleCard
-              title="Canales y comunicación"
-              subtitle="OMNICANAL · MENSAJERÍA"
-              description="WhatsApp, redes y email: credenciales y estado de conexión."
-              icon={MessageCircle}
-              badge={omnicanalModuleBadge}
-              href={hasConversacionesModulo ? "/configuracion/canales" : undefined}
-              disabled={!hasConversacionesModulo}
-              actionLabel={hasConversacionesModulo ? "Editar" : "Sin acceso"}
-            />
-          </li>
-          <li>
-            <SettingsModuleCard
-              title="Colas y enrutamiento"
-              subtitle="OMNICANAL · ROUTING"
-              description="Reglas de asignación y prioridad de conversaciones entrantes."
-              icon={Inbox}
-              badge={omnicanalModuleBadge}
-              href={hasConversacionesModulo ? "/configuracion/colas" : undefined}
-              disabled={!hasConversacionesModulo}
-              actionLabel={hasConversacionesModulo ? "Editar" : "Sin acceso"}
-            />
-          </li>
-          <li>
-            <SettingsModuleCard
-              title="Flujos conversacionales"
-              subtitle="OMNICANAL · AUTOMACIÓN"
-              description="Automatizaciones del hilo conversacional y ramas por canal."
-              icon={GitBranch}
-              badge={omnicanalModuleBadge}
-              href={hasConversacionesModulo ? "/configuracion/conversaciones/flujos" : undefined}
-              disabled={!hasConversacionesModulo}
-              actionLabel={hasConversacionesModulo ? "Editar" : "Sin acceso"}
-            />
-          </li>
-          <li>
-            <SettingsModuleCard
-              title="Equipos y supervisión"
-              subtitle="OMNICANAL · EQUIPOS"
-              description="Relaciones supervisor → agente para monitoreo y reporting operativo."
-              icon={UsersRound}
-              badge={omnicanalModuleBadge}
-              href={hasConversacionesModulo ? "/configuracion/omnicanal-equipos" : undefined}
-              disabled={!hasConversacionesModulo}
-              actionLabel={hasConversacionesModulo ? "Editar" : "Sin acceso"}
-            />
-          </li>
-          <li>
-            <SettingsModuleCard
-              title="Horarios de trabajo omnicanal"
-              subtitle="OMNICANAL · TURNOS"
-              description="Franjas y días reutilizables para agentes y futuras reglas de asignación y métricas."
-              icon={CalendarClock}
-              badge={omnicanalModuleBadge}
-              href={hasConversacionesModulo ? "/configuracion/omnicanal-horarios" : undefined}
-              disabled={!hasConversacionesModulo}
-              actionLabel={hasConversacionesModulo ? "Editar" : "Sin acceso"}
             />
           </li>
         </ul>
