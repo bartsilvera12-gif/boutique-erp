@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { fetchWithSupabaseSession } from "@/lib/api/fetch-with-supabase-session";
+import { ALLOWED_MENU_KEYS } from "@/components/layout/Sidebar";
 import { useParams, useSearchParams } from "next/navigation";
 import { useAutoClearFlag } from "@/hooks/useAutoClearFlag";
 import {
@@ -167,6 +168,12 @@ function UsuarioDetailContent() {
       })
       .then((data) => {
         const u = data as Usuario;
+        // Filtrar modulos_empresa al allowlist del sidebar (single source en
+        // Sidebar.tsx). Saca módulos heredados del repo base (Marketing, CRM,
+        // Omnicanal, etc.) que en esta instancia no se ven.
+        if (Array.isArray(u.modulos_empresa)) {
+          u.modulos_empresa = u.modulos_empresa.filter((m) => ALLOWED_MENU_KEYS.has(m.slug));
+        }
         setOmnicanalWarning(null);
         setUsuario(u);
         setForm(usuarioToForm(u));
