@@ -1,43 +1,19 @@
 /**
- * Helpers de unidad de medida.
- *
- * Las unidades continuas (metro, kg, lt, etc.) aceptan decimales — al vender o
- * comprar 2.5 m de cable, 0.75 kg de algo, etc. Las discretas (unidad, caja,
- * docena) solo enteros.
- *
- * `acceptaDecimal()` se usa en inputs <input type="number" step={...} /> para
- * permitir 0.01 vs 1 según corresponda.
- *
- * `formatCantidad()` muestra el stock con su sufijo: "459.60 m", "12 u",
- * "3.25 kg". Para enteros muestra sin decimales; para decimales muestra 2.
+ * Helpers de unidad de medida. METRO acepta decimales (2.5 m de tela); el resto
+ * (UNIDAD, COMBO, PAQUETE, DOCENA, CAJA) solo enteros.
  */
 
 const UNIDADES_CONTINUAS = new Set([
-  "METRO", "METROS", "M",
-  "CM",
-  "KG", "G",
-  "LT", "L", "ML",
+  "METRO",
 ]);
 
 const SUFIJO_CORTO: Record<string, string> = {
   UNIDAD: "u",
-  METRO: "m",
-  METROS: "m",
-  M: "m",
-  CM: "cm",
-  KG: "kg",
-  G: "g",
-  LT: "L",
-  L: "L",
-  ML: "ml",
-  CAJA: "cj",
-  BOLSA: "bls",
+  COMBO: "cb",
   PAQUETE: "pq",
   DOCENA: "dz",
-  LATA: "lt",
-  BOTELLA: "bot",
-  PORCION: "por",
-  COMBO: "cb",
+  CAJA: "cj",
+  METRO: "m",
 };
 
 export function aceptaDecimal(unidad: string | null | undefined): boolean {
