@@ -375,7 +375,9 @@ export default function NuevaVentaPage() {
   const tipoCambioNum = 1;
 
   const prodSel     = productos.find((p) => p.id === lineaProdId);
-  const cantNum     = parseInt(lineaCant) || 0;
+  // parseFloat para soportar decimales en unidades continuas (metros, kg, lt).
+  // Para UNIDAD/CAJA/DOCENA el front usa step=1 desde el input → siempre entero.
+  const cantNum     = parseFloat(lineaCant) || 0;
   const precioInput = parseFloat(lineaPrecio) || 0;
   const precioGs    = precioInput;
 

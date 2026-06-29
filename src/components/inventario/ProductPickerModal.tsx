@@ -1,4 +1,5 @@
 "use client";
+import { aceptaDecimal } from "@/lib/inventario/unidades";
 
 import { useEffect, useRef, useState } from "react";
 
@@ -174,7 +175,7 @@ export default function ProductPickerModal({
 
   function handleAgregar() {
     if (!sel) return;
-    const cantNum = parseInt(cantidad, 10) || 0;
+    const cantNum = parseFloat(cantidad) || 0;
     const precioNum = parseFloat(precio) || 0;
     if (cantNum <= 0) { setFeedback("Cantidad debe ser > 0"); return; }
     if (precioNum <= 0) { setFeedback("Precio debe ser > 0"); return; }
@@ -195,7 +196,7 @@ export default function ProductPickerModal({
   const enCarritoSel = sel ? excludeIds.filter((id) => id === sel.id).length : 0;
   const dispSel = sel ? sel.stock_actual - enCarritoSel : 0;
   const precioGsEquiv = moneda === "USD" ? (parseFloat(precio) || 0) * (tipoCambio || 0) : (parseFloat(precio) || 0);
-  const subtotal = (parseInt(cantidad, 10) || 0) * precioGsEquiv;
+  const subtotal = (parseFloat(cantidad) || 0) * precioGsEquiv;
   const ivaMonto = iva === "10%" ? subtotal * 0.10 : iva === "5%" ? subtotal * 0.05 : 0;
 
   // Mobile: pt-3 (gana viewport vertical valioso, evita el modal "cortado")
@@ -438,9 +439,13 @@ export default function ProductPickerModal({
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[11px] uppercase text-slate-400 mb-1">Cantidad</label>
+                      <label className="block text-[11px] uppercase text-slate-400 mb-1">
+                        Cantidad {sel ? `(${sel.unidad_medida.toLowerCase()})` : ""}
+                      </label>
                       <input
-                        type="number" min={1}
+                        type="number"
+                        min={0}
+                        step={aceptaDecimal(sel?.unidad_medida) ? "0.01" : "1"}
                         value={cantidad}
                         onChange={(e) => setCantidad(e.target.value)}
                         className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm"
