@@ -17,8 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Autorepuestos Felix Bogado",
-  description: "Sistema de gestión Zentra — Autorepuestos Felix Bogado",
+  title: "Sol Elegance Boutique",
+  description: "Sistema de gestión Zentra — Sol Elegance Boutique",
+  icons: { icon: [] },
 };
 
 export const viewport: Viewport = {
