@@ -8,6 +8,7 @@ import { getProducto, productoExiste, updateProducto } from "@/lib/inventario/st
 import type { MetodoValuacion } from "@/lib/inventario/types";
 import ProductImageUploader from "@/components/inventario/ProductImageUploader";
 import QuickNuevoProveedorModal from "@/components/proveedores/QuickNuevoProveedorModal";
+import QuickNuevaCategoriaModal from "@/components/inventario/QuickNuevaCategoriaModal";
 import SelectFromList from "@/components/inventario/SelectFromList";
 import ProveedoresCostos from "@/components/inventario/ProveedoresCostos";
 import { ShoppingBag, Boxes, ClipboardList, type LucideIcon } from "lucide-react";
@@ -82,6 +83,7 @@ export default function EditarProductoPage() {
   const [ubicaciones, setUbicaciones] = useState<UbiRow[]>([]);
   const [proveedores, setProveedores] = useState<ProvRow[]>([]);
   const [nuevoProveedorOpen, setNuevoProveedorOpen] = useState(false);
+  const [nuevaCategoriaOpen, setNuevaCategoriaOpen] = useState(false);
 
   // Clasificación gastronómica
   const [esVendible, setEsVendible] = useState(true);
@@ -682,12 +684,13 @@ export default function EditarProductoPage() {
                   <span className="text-xs text-gray-400 truncate">
                     {categorias.length === 0 ? "Todavía no cargaste categorías." : `${categorias.length} disponibles`}
                   </span>
-                  <Link
-                    href="/inventario/categorias"
+                  <button
+                    type="button"
+                    onClick={() => setNuevaCategoriaOpen(true)}
                     className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-sky-700 hover:text-sky-900 border border-sky-200 hover:bg-sky-50 px-2.5 py-1 rounded-md transition-colors"
                   >
                     + Crear
-                  </Link>
+                  </button>
                 </div>
               </div>
               <div className={`md:col-span-4 min-w-0 ${tipoGastro === "menu" ? "hidden" : ""}`}>
@@ -1020,6 +1023,19 @@ export default function EditarProductoPage() {
             return Array.from(map.values()).sort((a, b) => a.nombre.localeCompare(b.nombre));
           });
           setProveedorId(p.id);
+        }}
+      />
+
+      <QuickNuevaCategoriaModal
+        open={nuevaCategoriaOpen}
+        onClose={() => setNuevaCategoriaOpen(false)}
+        onCreated={(c) => {
+          setCategorias((prev) => {
+            const map = new Map(prev.map((r) => [r.id, r]));
+            map.set(c.id, c);
+            return Array.from(map.values()).sort((a, b) => a.nombre.localeCompare(b.nombre));
+          });
+          setCategoriaId(c.id);
         }}
       />
     </div>

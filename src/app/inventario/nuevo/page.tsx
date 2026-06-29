@@ -9,6 +9,7 @@ import { productoExiste, saveProducto } from "@/lib/inventario/storage";
 import type { MetodoValuacion } from "@/lib/inventario/types";
 import { ShoppingBag, Boxes, ClipboardList, type LucideIcon } from "lucide-react";
 import QuickNuevoProveedorModal from "@/components/proveedores/QuickNuevoProveedorModal";
+import QuickNuevaCategoriaModal from "@/components/inventario/QuickNuevaCategoriaModal";
 
 // Opciones estándar de unidad de medida para gastro
 const UNIDADES_OPCIONES = [
@@ -108,6 +109,7 @@ export default function NuevoProductoPage() {
   const [ubicaciones, setUbicaciones] = useState<UbiRow[]>([]);
   const [proveedores, setProveedores] = useState<ProvRow[]>([]);
   const [nuevoProveedorOpen, setNuevoProveedorOpen] = useState(false);
+  const [nuevaCategoriaOpen, setNuevaCategoriaOpen] = useState(false);
 
   useEffect(() => {
     let cancel = false;
@@ -874,12 +876,13 @@ export default function NuevoProductoPage() {
                   <span className="text-xs text-gray-400 truncate">
                     {categorias.length === 0 ? "Todavía no cargaste categorías." : `${categorias.length} disponibles`}
                   </span>
-                  <Link
-                    href="/inventario/categorias"
+                  <button
+                    type="button"
+                    onClick={() => setNuevaCategoriaOpen(true)}
                     className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-sky-700 hover:text-sky-900 border border-sky-200 hover:bg-sky-50 px-2.5 py-1 rounded-md transition-colors"
                   >
                     + Crear
-                  </Link>
+                  </button>
                 </div>
               </div>
 
@@ -1131,6 +1134,19 @@ export default function NuevoProductoPage() {
             return Array.from(map.values()).sort((a, b) => a.nombre.localeCompare(b.nombre));
           });
           setProveedorId(p.id);
+        }}
+      />
+
+      <QuickNuevaCategoriaModal
+        open={nuevaCategoriaOpen}
+        onClose={() => setNuevaCategoriaOpen(false)}
+        onCreated={(c) => {
+          setCategorias((prev) => {
+            const map = new Map(prev.map((r) => [r.id, r]));
+            map.set(c.id, c);
+            return Array.from(map.values()).sort((a, b) => a.nombre.localeCompare(b.nombre));
+          });
+          setCategoriaId(c.id);
         }}
       />
     </div>
