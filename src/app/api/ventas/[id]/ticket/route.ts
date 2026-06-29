@@ -25,7 +25,7 @@ import { membreteA4, membreteTicket } from "@/lib/documentos/membrete";
  *   3) fallback seguro
  * Nunca se hardcodea otra marca.
  */
-const NEGOCIO_FALLBACK = "Autorepuestos Felix Bogado";
+const NEGOCIO_FALLBACK = "Sol Elegance Boutique";
 
 function resolveNegocio(nombreEmpresa?: string | null): string {
   const env = (process.env.NEURA_CLIENT_NAME ?? "").trim();
