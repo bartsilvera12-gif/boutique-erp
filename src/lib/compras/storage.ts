@@ -39,6 +39,7 @@ function mapRow(r: CompraApiRow): Compra {
     comprobante_storage_path: r.comprobante_storage_path ?? null,
     comprobante_nombre: r.comprobante_nombre ?? null,
     comprobante_mime_type: r.comprobante_mime_type ?? null,
+    estado: r.estado === "anulada" ? "anulada" : "registrada",
     fecha: r.fecha,
   };
 }

@@ -45,6 +45,7 @@ type GrupoCompra = {
   items: Compra[];
   total: number;
   comprobante: boolean;
+  anulada: boolean;
 };
 
 function agrupar(rows: Compra[]): GrupoCompra[] {
@@ -62,12 +63,14 @@ function agrupar(rows: Compra[]): GrupoCompra[] {
         items: [],
         total: 0,
         comprobante: false,
+        anulada: false,
       };
       map.set(key, g);
     }
     g.items.push(c);
     g.total += Number(c.total) || 0;
     if (c.comprobante_storage_path) g.comprobante = true;
+    if (c.estado === "anulada") g.anulada = true;
   }
   return [...map.values()].sort(
     (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
@@ -86,6 +89,36 @@ export default function ComprasPage() {
   const [filtroTipoPago, setFiltroTipoPago] = useState<TipoPago | "">("");
   const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
   const [cargandoLista, setCargandoLista] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Anulación
+  const [anularTarget, setAnularTarget] = useState<{ numero_control: string; proveedor_nombre: string; total: number } | null>(null);
+  const [anularMotivo, setAnularMotivo] = useState("");
+  const [anularLoading, setAnularLoading] = useState(false);
+  const [anularError, setAnularError] = useState<string | null>(null);
+
+  async function confirmarAnulacion() {
+    if (!anularTarget) return;
+    const motivo = anularMotivo.trim();
+    if (motivo.length < 3) { setAnularError("El motivo es obligatorio (mínimo 3 caracteres)."); return; }
+    setAnularLoading(true); setAnularError(null);
+    try {
+      const r = await fetch("/api/compras/anular", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ numero_control: anularTarget.numero_control, motivo }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j?.success) throw new Error(j?.error ?? `Error ${r.status}`);
+      setAnularTarget(null); setAnularMotivo("");
+      setRefreshKey((k) => k + 1);
+    } catch (e) {
+      setAnularError(e instanceof Error ? e.message : "No se pudo anular la compra.");
+    } finally {
+      setAnularLoading(false);
+    }
+  }
 
   useEffect(() => {
     let cancel = false;
@@ -97,7 +130,7 @@ export default function ComprasPage() {
       if (!cancel) setCargandoLista(false);
     });
     return () => { cancel = true; };
-  }, []);
+  }, [refreshKey]);
 
   const grupos = useMemo(() => agrupar(todas), [todas]);
 
@@ -185,13 +218,14 @@ export default function ComprasPage() {
                 <th className="py-3 pr-4 font-medium text-right">Ítems</th>
                 <th className="py-3 pr-4 font-medium text-right">Total</th>
                 <th className="hidden py-3 pr-4 font-medium lg:table-cell">Pago</th>
-                <th className="py-3 font-medium">Fecha</th>
+                <th className="py-3 pr-4 font-medium">Fecha</th>
+                <th className="py-3 font-medium text-right">Acción</th>
               </tr>
             </thead>
             <tbody>
               {cargandoLista ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-sm text-slate-400">
+                  <td colSpan={8} className="py-12 text-center text-sm text-slate-400">
                     <div className="inline-flex items-center gap-2">
                       <svg className="h-4 w-4 animate-spin text-[#4FAEB2]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
                         <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
@@ -203,7 +237,7 @@ export default function ComprasPage() {
                 </tr>
               ) : filtrados.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-gray-400">
+                  <td colSpan={8} className="py-12 text-center text-gray-400">
                     {grupos.length === 0 ? "No hay compras registradas" : "Ninguna compra coincide con los filtros"}
                   </td>
                 </tr>
@@ -253,7 +287,28 @@ export default function ComprasPage() {
                             {g.tipo_pago === "contado" ? "Contado" : g.tipo_pago === "credito" ? `Crédito ${g.plazo_dias ?? ""}d` : "—"}
                           </span>
                         </td>
-                        <td className="py-4 text-gray-500 text-xs tabular-nums">{formatFecha(g.fecha)}</td>
+                        <td className="py-4 pr-4 text-gray-500 text-xs tabular-nums">{formatFecha(g.fecha)}</td>
+                        <td className="py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                          {g.anulada ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 ring-1 ring-red-200">
+                              Anulada
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setAnularTarget({ numero_control: g.numero_control, proveedor_nombre: g.proveedor_nombre, total: g.total });
+                                setAnularMotivo("");
+                                setAnularError(null);
+                              }}
+                              className="inline-flex items-center justify-center rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:border-red-300 hover:bg-red-50 transition-colors"
+                              title="Anular compra (reversa stock)"
+                            >
+                              Anular
+                            </button>
+                          )}
+                        </td>
                       </tr>
 
                       {abierto && multi && g.items.map((it) => (
@@ -268,6 +323,7 @@ export default function ComprasPage() {
                           <td className="py-2 pr-4 text-right tabular-nums text-gray-700">{formatGs(it.total)}</td>
                           <td className="hidden lg:table-cell" />
                           <td />
+                          <td />
                         </tr>
                       ))}
                     </FragmentRow>
@@ -281,6 +337,62 @@ export default function ComprasPage() {
       </div>
 
       <MobileFab href="/compras/nueva" label="Nueva compra" />
+
+      {anularTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => { if (!anularLoading) { setAnularTarget(null); setAnularError(null); } }}
+        >
+          <div
+            className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>
+              <h3 className="text-base font-semibold text-slate-900">
+                Anular compra {anularTarget.numero_control}
+              </h3>
+              <p className="mt-1 text-sm text-slate-600">
+                Proveedor: <strong>{anularTarget.proveedor_nombre}</strong><br/>
+                Total: <strong>Gs. {Math.round(anularTarget.total).toLocaleString("es-PY")}</strong>
+              </p>
+              <p className="mt-2 text-xs text-slate-500">
+                Se revertirá el stock de cada producto. Si la compra tiene pagos registrados en "Pagos a proveedores", la anulación queda bloqueada — eliminá los pagos primero.
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Motivo de la anulación *</label>
+              <textarea
+                value={anularMotivo}
+                onChange={(e) => setAnularMotivo(e.target.value)}
+                placeholder="Ej. Error de carga, devolución al proveedor, mercadería en mal estado…"
+                rows={3}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500/30"
+              />
+            </div>
+            {anularError && (
+              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">{anularError}</p>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => { if (!anularLoading) { setAnularTarget(null); setAnularError(null); } }}
+                disabled={anularLoading}
+                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                onClick={confirmarAnulacion}
+                disabled={anularLoading || anularMotivo.trim().length < 3}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {anularLoading ? "Anulando…" : "Sí, anular compra"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -37,5 +37,8 @@ export interface Compra {
   comprobante_nombre?: string | null;
   comprobante_mime_type?: string | null;
 
+  /** Estado operativo: registrada (default) o anulada. */
+  estado?: "registrada" | "anulada";
+
   fecha: string;                 // ISO string, generado automáticamente
 }
