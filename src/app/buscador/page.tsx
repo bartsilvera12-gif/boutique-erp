@@ -5,7 +5,7 @@
  *
  * Flujo:
  *   1. Buscar producto (nombre/SKU/OEM/marca).
- *   2. Ver stock, ubicación física, compatibilidades y precios.
+ *   2. Ver stock, ubicación física y precios.
  *   3. Agregar al "carrito" del pedido (cantidad + tipo de precio).
  *   4. Opcional: elegir cliente.
  *   5. "Enviar a caja" → aparece en /ventas como pedido pendiente.
@@ -17,7 +17,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import { fetchWithSupabaseSession } from "@/lib/api/fetch-with-supabase-session";
 import { getClientes } from "@/lib/clientes/storage";
 import type { Cliente } from "@/lib/clientes/types";
-import { Search, MapPin, Car, Trash2, Send, Loader2, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { Search, MapPin, Trash2, Send, Loader2, CheckCircle2, Clock, XCircle } from "lucide-react";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 
 type ProductoHit = {
@@ -34,14 +34,6 @@ type ProductoHit = {
   ubicacion_pasillo?: string | null;
   ubicacion_estante?: string | null;
   ubicacion_caja?: string | null;
-};
-
-type Compatibilidad = {
-  id: string;
-  marca_vehiculo: string;
-  modelo_vehiculo: string;
-  anio_desde: number | null;
-  anio_hasta: number | null;
 };
 
 type CartItem = {
@@ -94,8 +86,6 @@ export default function BuscadorPage() {
   const [hits, setHits] = useState<ProductoHit[]>([]);
   const [buscando, setBuscando] = useState(false);
   const [seleccionado, setSeleccionado] = useState<ProductoHit | null>(null);
-  const [compat, setCompat] = useState<Compatibilidad[]>([]);
-  const [cargandoCompat, setCargandoCompat] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [clienteId, setClienteId] = useState<string>("");
@@ -160,18 +150,6 @@ export default function BuscadorPage() {
     }, 250);
     return () => { cancel = true; clearTimeout(t); };
   }, [q]);
-
-  // ── Compatibilidad del producto seleccionado ──────────────────────────
-  useEffect(() => {
-    if (!seleccionado) { setCompat([]); return; }
-    let cancel = false;
-    setCargandoCompat(true);
-    fetchWithSupabaseSession(`/api/productos/${seleccionado.id}/compatibilidades`, { cache: "no-store" })
-      .then((r) => r.json())
-      .then((j) => { if (!cancel) setCompat((j?.data?.items ?? []) as Compatibilidad[]); })
-      .finally(() => { if (!cancel) setCargandoCompat(false); });
-    return () => { cancel = true; };
-  }, [seleccionado]);
 
   // ── Cargas iniciales ──────────────────────────────────────────────────
   useEffect(() => {
@@ -359,23 +337,7 @@ export default function BuscadorPage() {
                         )}
                       </div>
                     </div>
-                    <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
-                      {seleccionado?.id === p.id ? (
-                        <div className="text-xs text-slate-500">
-                          {cargandoCompat ? "Cargando compatibilidades…" :
-                            compat.length === 0 ? "Sin vehículos asociados" :
-                              <span className="flex items-center gap-1 flex-wrap">
-                                <Car className="h-3 w-3" />
-                                {compat.slice(0, 3).map((c, i) => (
-                                  <span key={c.id} className="rounded-full bg-slate-100 px-1.5 py-0.5">
-                                    {c.marca_vehiculo} {c.modelo_vehiculo}{c.anio_desde ? ` ${c.anio_desde}${c.anio_hasta ? `-${c.anio_hasta}` : "+"}` : ""}
-                                    {i < Math.min(2, compat.length - 1) ? "" : ""}
-                                  </span>
-                                ))}
-                                {compat.length > 3 && <span className="text-slate-400">+{compat.length - 3}</span>}
-                              </span>}
-                        </div>
-                      ) : <span className="text-xs text-slate-400">Click para ver compatibilidades</span>}
+                    <div className="mt-3 flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); addToCart(p); }}
