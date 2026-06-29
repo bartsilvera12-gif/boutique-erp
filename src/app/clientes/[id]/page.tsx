@@ -83,11 +83,8 @@ type TabId = "informacion" | "vehiculos" | "estado_cuenta" | "suscripciones" | "
 
 const TABS: { id: TabId; label: string; showWhen?: (c: Cliente) => boolean }[] = [
   { id: "informacion",   label: "Información"      },
-  { id: "vehiculos",     label: "Vehículos"        },
   { id: "estado_cuenta", label: "Estado de cuenta" },
-  { id: "suscripciones", label: "Suscripciones"    },
   { id: "marketing",     label: "Marketing",        showWhen: (c) => c.tipo_servicio_cliente === "marketing" },
-  { id: "proyectos",     label: "Proyectos"         },
   { id: "actividad",     label: "Actividad"         },
   { id: "notas",         label: "Notas"             },
 ];
