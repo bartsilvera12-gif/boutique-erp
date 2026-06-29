@@ -87,6 +87,7 @@ export default function BuscadorPage() {
   const [buscando, setBuscando] = useState(false);
   const [seleccionado, setSeleccionado] = useState<ProductoHit | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [cantDraft, setCantDraft] = useState<Record<string, string>>({});
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [clienteId, setClienteId] = useState<string>("");
   const [enviando, setEnviando] = useState(false);
@@ -384,8 +385,26 @@ export default function BuscadorPage() {
                             type="number"
                             min={1}
                             max={Math.max(1, it.stock_actual)}
-                            value={it.cantidad}
-                            onChange={(e) => updateCart(it.producto_id, { cantidad: Math.max(1, parseInt(e.target.value) || 1) })}
+                            value={cantDraft[it.producto_id] ?? String(it.cantidad)}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setCantDraft((d) => ({ ...d, [it.producto_id]: v }));
+                              const n = parseInt(v, 10);
+                              if (Number.isFinite(n) && n >= 1) {
+                                updateCart(it.producto_id, { cantidad: n });
+                              }
+                            }}
+                            onBlur={() => {
+                              const raw = cantDraft[it.producto_id];
+                              const n = parseInt(raw ?? "", 10);
+                              const clamped = Math.max(1, Number.isFinite(n) ? n : 1);
+                              updateCart(it.producto_id, { cantidad: clamped });
+                              setCantDraft((d) => {
+                                const { [it.producto_id]: _drop, ...rest } = d;
+                                void _drop;
+                                return rest;
+                              });
+                            }}
                             className="w-full rounded border border-slate-200 px-1.5 py-1 text-center tabular-nums"
                           />
                         </div>
