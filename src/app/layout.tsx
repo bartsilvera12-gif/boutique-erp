@@ -19,7 +19,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Sol Elegance Boutique",
   description: "Sistema de gestión Zentra — Sol Elegance Boutique",
-  icons: { icon: [] },
 };
 
 export const viewport: Viewport = {

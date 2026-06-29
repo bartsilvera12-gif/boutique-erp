@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Bell, ChevronDown, LogOut, Menu } from "lucide-react";
 import { fetchWithSupabaseSession } from "@/lib/api/fetch-with-supabase-session";
@@ -120,18 +119,11 @@ export default function Header() {
             className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 shadow-sm transition-all hover:border-[#4FAEB2]/60"
           >
             <div
-              className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white"
+              className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#4FAEB2] text-sm font-bold text-white"
               style={{ boxShadow: "0 0 0 3px rgba(79, 174, 178, 0.25)" }}
+              aria-label={displayName}
             >
-              <Image
-                src="/icono.png"
-                alt="Autorepuestos Felix Bogado"
-                width={72}
-                height={72}
-                sizes="36px"
-                className="h-full w-full object-contain p-0.5"
-                priority
-              />
+              {(displayName?.trim()?.[0] ?? "A").toUpperCase()}
             </div>
             <div className="hidden text-left sm:block">
               <p className="max-w-[180px] truncate text-sm font-semibold text-slate-900">{displayName}</p>
