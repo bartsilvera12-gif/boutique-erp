@@ -78,6 +78,34 @@ export default function PagosProveedoresPage() {
   const [pagosDocLoading, setPagosDocLoading] = useState(false);
   const [eliminandoId, setEliminandoId] = useState<string | null>(null);
 
+  // Anulación de compra (mismo endpoint que /compras → /api/compras/anular)
+  const [anularDoc, setAnularDoc] = useState<CxPItem | null>(null);
+  const [anularMotivo, setAnularMotivo] = useState("");
+  const [anularLoading, setAnularLoading] = useState(false);
+  const [anularError, setAnularError] = useState<string | null>(null);
+
+  async function confirmarAnulacionCompra() {
+    if (!anularDoc) return;
+    const motivo = anularMotivo.trim();
+    if (motivo.length < 3) { setAnularError("El motivo es obligatorio (mínimo 3 caracteres)."); return; }
+    setAnularLoading(true); setAnularError(null);
+    try {
+      const r = await fetchWithSupabaseSession("/api/compras/anular", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ numero_control: anularDoc.numero_control, motivo }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j?.success) throw new Error(j?.error ?? `Error ${r.status}`);
+      setAnularDoc(null); setAnularMotivo("");
+      await cargar(); // refresca lista (la compra anulada deja de aparecer)
+    } catch (e) {
+      setAnularError(e instanceof Error ? e.message : "No se pudo anular la compra.");
+    } finally {
+      setAnularLoading(false);
+    }
+  }
+
   const cargarPagosDoc = useCallback(async (numeroControl: string) => {
     setPagosDocLoading(true);
     try {
@@ -296,10 +324,17 @@ export default function PagosProveedoresPage() {
                   </td>
                   <td className="px-4 py-3 text-center">
                     {d.saldo_pendiente > 0 ? (
-                      <button onClick={() => abrirPago(d)}
-                        className="rounded-md bg-[#4FAEB2] px-3 py-1 text-xs font-medium text-white hover:bg-[#3F8E91]">
-                        Registrar pago
-                      </button>
+                      <div className="inline-flex items-center gap-1.5">
+                        <button onClick={() => abrirPago(d)}
+                          className="rounded-md bg-[#4FAEB2] px-3 py-1 text-xs font-medium text-white hover:bg-[#3F8E91]">
+                          Registrar pago
+                        </button>
+                        <button onClick={() => { setAnularDoc(d); setAnularMotivo(""); setAnularError(null); }}
+                          className="rounded-md border border-red-200 bg-white px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                          title="Anular compra (reversa stock)">
+                          Anular
+                        </button>
+                      </div>
                     ) : <span className="text-slate-300">—</span>}
                   </td>
                 </tr>
@@ -428,6 +463,53 @@ export default function PagosProveedoresPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Anular compra */}
+      {anularDoc && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4"
+          onClick={() => { if (!anularLoading) { setAnularDoc(null); setAnularError(null); } }}>
+          <div role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
+              <h3 className="text-base font-semibold text-slate-800">
+                Anular compra {anularDoc.numero_control}
+              </h3>
+              <button onClick={() => { if (!anularLoading) { setAnularDoc(null); setAnularError(null); } }}
+                className="rounded p-1 text-slate-400 hover:bg-slate-100" aria-label="Cerrar">✕</button>
+            </div>
+            <div className="space-y-3 px-5 py-4">
+              <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                <div><b>{anularDoc.proveedor_nombre ?? "—"}</b></div>
+                <div>Total: <b>{fmtGs(anularDoc.total_documento)}</b></div>
+                <div className="mt-1 text-[11px] text-slate-500">
+                  Se revertirá el stock de cada producto. Si la compra tiene pagos registrados, eliminálos primero desde "Registrar pago" → lista de pagos.
+                </div>
+              </div>
+              {anularError && (
+                <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{anularError}</div>
+              )}
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600">Motivo de la anulación *</label>
+                <textarea value={anularMotivo} onChange={(e) => setAnularMotivo(e.target.value)} rows={3}
+                  placeholder="Ej. Error de carga, devolución al proveedor…"
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+              </div>
+              <div className="flex justify-end gap-2 pt-1">
+                <button type="button" onClick={() => { if (!anularLoading) { setAnularDoc(null); setAnularError(null); } }}
+                  disabled={anularLoading}
+                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                  Volver
+                </button>
+                <button type="button" onClick={confirmarAnulacionCompra}
+                  disabled={anularLoading || anularMotivo.trim().length < 3}
+                  className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50">
+                  {anularLoading ? "Anulando…" : "Sí, anular compra"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
