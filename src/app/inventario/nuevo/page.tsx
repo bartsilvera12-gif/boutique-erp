@@ -1085,58 +1085,11 @@ export default function NuevoProductoPage() {
             </select>
           </div>
 
-          {/* Datos de autopartes (Fase 2 — todos opcionales) */}
           <details className="rounded-lg border border-slate-200 bg-white p-4 open:shadow-sm">
             <summary className="cursor-pointer text-sm font-semibold text-slate-700 hover:text-slate-900">
-              Datos de autopartes (opcional)
+              Detalles adicionales (opcional)
             </summary>
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <label className={labelClass}>Código OEM (original)</label>
-                <input
-                  type="text"
-                  name="codigo_oem"
-                  value={form.codigo_oem}
-                  onChange={handleChange}
-                  placeholder="ej. 90915-YZZE1"
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Código alternativo</label>
-                <input
-                  type="text"
-                  name="codigo_alternativo"
-                  value={form.codigo_alternativo}
-                  onChange={handleChange}
-                  placeholder="ej. WIX-57045"
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Marca del repuesto</label>
-                <input
-                  type="text"
-                  name="marca_repuesto"
-                  value={form.marca_repuesto}
-                  onChange={handleChange}
-                  placeholder="ej. Bosch, NGK, Mahle"
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Garantía (meses)</label>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  name="garantia_meses"
-                  value={form.garantia_meses}
-                  onChange={handleChange}
-                  placeholder="0"
-                  className={inputClass}
-                />
-              </div>
               <div className="sm:col-span-2">
                 <label className="flex items-center gap-2 text-sm text-slate-700">
                   <input
