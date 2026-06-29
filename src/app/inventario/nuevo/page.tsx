@@ -1085,99 +1085,17 @@ export default function NuevoProductoPage() {
             </select>
           </div>
 
-          <details className="rounded-lg border border-slate-200 bg-white p-4 open:shadow-sm">
-            <summary className="cursor-pointer text-sm font-semibold text-slate-700 hover:text-slate-900">
-              Detalles adicionales (opcional)
-            </summary>
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <label className="flex items-center gap-2 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={permitirVentaSinStock}
-                    onChange={(e) => setPermitirVentaSinStock(e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 text-[#0EA5E9] focus:ring-[#0EA5E9]"
-                  />
-                  Permitir vender aún sin stock disponible
-                </label>
-              </div>
-              <div className="sm:col-span-2 pt-1">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Ubicación física</p>
-              </div>
-              <div>
-                <label className={labelClass}>Departamento</label>
-                <input
-                  type="text"
-                  name="departamento"
-                  value={form.departamento}
-                  onChange={handleChange}
-                  placeholder="ej. PLAZA Q5"
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Pasillo</label>
-                <input
-                  type="text"
-                  name="pasillo"
-                  value={form.pasillo}
-                  onChange={handleChange}
-                  placeholder="ej. A"
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Estante</label>
-                <input
-                  type="text"
-                  name="estante"
-                  value={form.estante}
-                  onChange={handleChange}
-                  placeholder="ej. 3"
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Caja</label>
-                <input
-                  type="text"
-                  name="caja"
-                  value={form.caja}
-                  onChange={handleChange}
-                  placeholder="ej. 12"
-                  className={inputClass}
-                />
-              </div>
-              <div className="sm:col-span-2 pt-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Proveedor</p>
-              </div>
-              <div>
-                <label className={labelClass}>Nombre del proveedor</label>
-                <input
-                  type="text"
-                  name="distribuidor_nombre"
-                  value={form.distribuidor_nombre}
-                  onChange={handleChange}
-                  placeholder="ej. BOSCH ARGENTINA"
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>% comisión al proveedor</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  step={0.01}
-                  name="distribuidor_comision_pct"
-                  value={form.distribuidor_comision_pct}
-                  onChange={handleChange}
-                  placeholder="0"
-                  className={inputClass}
-                />
-              </div>
-            </div>
-          </details>
+          <div className="rounded-lg border border-slate-200 bg-white p-4">
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={permitirVentaSinStock}
+                onChange={(e) => setPermitirVentaSinStock(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-[#0EA5E9] focus:ring-[#0EA5E9]"
+              />
+              Permitir vender aún sin stock disponible
+            </label>
+          </div>
 
           {/* Acciones */}
           <div className="flex gap-4 pt-2">
