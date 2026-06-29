@@ -61,16 +61,17 @@ export async function POST(
       return NextResponse.json(errorResponse("La venta ya está anulada."), { status: 409 });
     }
 
-    // 2) Items para reversar stock
+    // 2) Items para reversar stock (sin costo_unitario — esa columna no existe
+    //    en ventas_items; el costo del movimiento se toma de productos.costo_promedio).
     const iQ = await sb
       .from("ventas_items")
-      .select("producto_id, producto_nombre, sku, cantidad, costo_unitario")
+      .select("producto_id, producto_nombre, sku, cantidad")
       .eq("empresa_id", empresaId)
       .eq("venta_id", id);
     if (iQ.error) throw new Error(iQ.error.message);
     const items = (iQ.data ?? []) as Array<{
       producto_id: string; producto_nombre: string | null; sku: string | null;
-      cantidad: number | string; costo_unitario: number | string | null;
+      cantidad: number | string;
     }>;
 
     // 3) Marcar la venta como anulada PRIMERO (si falla algo después no rompe la idempotencia).
@@ -97,15 +98,16 @@ export async function POST(
         // Subir stock_actual (RPC podría ser atómico; acá lo hacemos en 2 pasos best-effort).
         const pQ = await sb
           .from("productos")
-          .select("stock_actual, controla_stock")
+          .select("stock_actual, controla_stock, costo_promedio")
           .eq("empresa_id", empresaId)
           .eq("id", it.producto_id)
           .maybeSingle();
         if (pQ.error || !pQ.data) continue;
-        const prod = pQ.data as { stock_actual: number | string; controla_stock: boolean };
+        const prod = pQ.data as { stock_actual: number | string; controla_stock: boolean; costo_promedio: number | string };
         if (prod.controla_stock !== true) continue; // sin control de stock, nada que reversar
 
         const stockAct = Number(prod.stock_actual) || 0;
+        const costoUnit = Number(prod.costo_promedio) || 0;
         const stockNew = stockAct + qty;
         const upStock = await sb
           .from("productos")
@@ -125,7 +127,7 @@ export async function POST(
           producto_sku: it.sku ?? "",
           tipo: "ENTRADA",
           cantidad: qty,
-          costo_unitario: Number(it.costo_unitario) || 0,
+          costo_unitario: costoUnit,
           origen: "ajuste_manual",
           referencia: `ANUL-${venta.numero_control}`,
           fecha: ahora,
