@@ -64,12 +64,18 @@ export default function ComprasReportePage() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-            <StatCard compact label="Total comprado" value={formatGs(data.totalComprado)} accent />
+            <StatCard compact label="Total comprado" value={formatGs(data.totalComprado)} hint="neto (excluye anuladas)" accent />
             <StatCard compact label="Compras del mes" value={String(data.cantidad)} hint={`${data.cantidadItems} ítems / líneas`} />
             <StatCard compact label="Compra más alta" value={data.compraMasAlta ? formatGs(data.compraMasAlta.total) : "—"} hint={data.compraMasAlta ? `${data.compraMasAlta.numero_control} · ${data.compraMasAlta.proveedor_nombre}` : "Sin compras"} />
             <StatCard compact label="Proveedor con mayor monto" value={data.proveedorMayor ? data.proveedorMayor.proveedor_nombre : "—"} hint={data.proveedorMayor ? formatGs(data.proveedorMayor.total) : ""} />
             <StatCard compact label="Producto más comprado" value={data.productoMasComprado ? data.productoMasComprado.producto_nombre : "—"} hint={data.productoMasComprado ? `${data.productoMasComprado.cantidad} u.` : ""} />
             <StatCard compact label="Producto con mayor gasto" value={data.productoMayorGasto ? data.productoMayorGasto.producto_nombre : "—"} hint={data.productoMayorGasto ? formatGs(data.productoMayorGasto.gasto) : ""} />
+            <StatCard
+              compact
+              label="Anuladas"
+              value={data.anuladas.cantidad > 0 ? formatGs(data.anuladas.total) : "—"}
+              hint={data.anuladas.cantidad > 0 ? `${data.anuladas.cantidad} compra${data.anuladas.cantidad === 1 ? "" : "s"}` : "sin anulaciones"}
+            />
           </div>
 
           {/* Compras del mes (agrupadas por N° control) */}
@@ -79,12 +85,13 @@ export default function ComprasReportePage() {
               <p className="text-sm text-slate-400">No hay compras en el período.</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[920px] text-left text-sm">
+                <table className="w-full min-w-[1020px] text-left text-sm">
                   <thead>
                     <tr className="border-b text-slate-500">
                       <th className="py-2.5 pr-4 font-medium">Fecha</th>
                       <th className="py-2.5 pr-4 font-medium">N° Compra</th>
                       <th className="py-2.5 pr-4 font-medium">Proveedor</th>
+                      <th className="py-2.5 pr-4 font-medium">Estado</th>
                       <th className="py-2.5 pr-4 font-medium text-right">Ítems</th>
                       <th className="py-2.5 pr-4 font-medium text-right">Subtotal</th>
                       <th className="py-2.5 pr-4 font-medium text-right">IVA</th>
@@ -95,33 +102,41 @@ export default function ComprasReportePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.compras.map((c) => (
-                      <tr key={c.numero_control} className="border-b border-slate-100 last:border-0">
-                        <td className="py-3 pr-4 text-slate-600 text-xs tabular-nums">{formatFecha(c.fecha)}</td>
-                        <td className="py-3 pr-4 font-mono text-xs text-slate-500">{c.numero_control}</td>
-                        <td className="py-3 pr-4 text-slate-700">{c.proveedor_nombre}</td>
-                        <td className="py-3 pr-4 text-right tabular-nums text-slate-700">{c.items_count}</td>
-                        <td className="py-3 pr-4 text-right tabular-nums text-slate-600">{formatGs(c.subtotal)}</td>
-                        <td className="py-3 pr-4 text-right tabular-nums text-slate-500">{c.monto_iva > 0 ? formatGs(c.monto_iva) : "—"}</td>
-                        <td className="py-3 pr-4 text-right tabular-nums font-semibold text-slate-800">{formatGs(c.total)}</td>
-                        <td className="py-3 pr-4 text-slate-600">{tipoPagoLabel(c.tipo_pago)}</td>
-                        <td className="py-3 pr-4 font-mono text-xs text-slate-500">{c.nro_timbrado || "—"}</td>
-                        <td className="py-3">
-                          {c.tiene_comprobante ? (
-                            <a
-                              href={`/api/compras/comprobante?numero_control=${encodeURIComponent(c.numero_control)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs font-medium text-[#4FAEB2] hover:text-[#3F8E91] hover:underline"
-                            >
-                              📎 Ver
-                            </a>
-                          ) : (
-                            <span className="text-xs text-slate-300">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                    {data.compras.map((c) => {
+                      const anul = c.estado === "anulada";
+                      return (
+                        <tr key={c.numero_control} className={`border-b border-slate-100 last:border-0 ${anul ? "bg-red-50/40" : ""}`}>
+                          <td className="py-3 pr-4 text-slate-600 text-xs tabular-nums">{formatFecha(c.fecha)}</td>
+                          <td className="py-3 pr-4 font-mono text-xs text-slate-500">{c.numero_control}</td>
+                          <td className="py-3 pr-4 text-slate-700">{c.proveedor_nombre}</td>
+                          <td className="py-3 pr-4">
+                            <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${anul ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}`}>
+                              {anul ? "Anulada" : "Registrada"}
+                            </span>
+                          </td>
+                          <td className="py-3 pr-4 text-right tabular-nums text-slate-700">{c.items_count}</td>
+                          <td className="py-3 pr-4 text-right tabular-nums text-slate-600">{formatGs(c.subtotal)}</td>
+                          <td className="py-3 pr-4 text-right tabular-nums text-slate-500">{c.monto_iva > 0 ? formatGs(c.monto_iva) : "—"}</td>
+                          <td className={`py-3 pr-4 text-right tabular-nums font-semibold ${anul ? "text-red-700 line-through" : "text-slate-800"}`}>{formatGs(c.total)}</td>
+                          <td className="py-3 pr-4 text-slate-600">{tipoPagoLabel(c.tipo_pago)}</td>
+                          <td className="py-3 pr-4 font-mono text-xs text-slate-500">{c.nro_timbrado || "—"}</td>
+                          <td className="py-3">
+                            {c.tiene_comprobante ? (
+                              <a
+                                href={`/api/compras/comprobante?numero_control=${encodeURIComponent(c.numero_control)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs font-medium text-[#4FAEB2] hover:text-[#3F8E91] hover:underline"
+                              >
+                                📎 Ver
+                              </a>
+                            ) : (
+                              <span className="text-xs text-slate-300">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

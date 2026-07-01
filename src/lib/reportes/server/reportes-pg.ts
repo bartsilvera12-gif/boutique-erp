@@ -61,14 +61,15 @@ export async function getEstadoCuenta(
   const tGastos = quoteSchemaTable(schema, "gastos");
   const p = pool();
 
+  // Todas las métricas de estado de cuenta EXCLUYEN operaciones anuladas.
   const ventasQ = p.query<{ total: number }>(
     `SELECT COALESCE(SUM(total),0)::float8 AS total FROM ${tVentas}
-      WHERE empresa_id=$1::uuid AND fecha>=$2::timestamptz AND fecha<=$3::timestamptz`,
+      WHERE empresa_id=$1::uuid AND estado <> 'anulada' AND fecha>=$2::timestamptz AND fecha<=$3::timestamptz`,
     [empresaId, b.start, b.end]
   );
   const comprasQ = p.query<{ total: number }>(
     `SELECT COALESCE(SUM(total),0)::float8 AS total FROM ${tCompras}
-      WHERE empresa_id=$1::uuid AND fecha>=$2::timestamptz AND fecha<=$3::timestamptz`,
+      WHERE empresa_id=$1::uuid AND estado <> 'anulada' AND fecha>=$2::timestamptz AND fecha<=$3::timestamptz`,
     [empresaId, b.start, b.end]
   );
   const gastosQ = p.query<{ total: number }>(
@@ -78,26 +79,26 @@ export async function getEstadoCuenta(
   );
   const porCobrarQ = p.query<{ total: number }>(
     `SELECT COALESCE(SUM(total),0)::float8 AS total FROM ${tVentas}
-      WHERE empresa_id=$1::uuid AND tipo_venta='CREDITO' AND fecha>=$2::timestamptz AND fecha<=$3::timestamptz`,
+      WHERE empresa_id=$1::uuid AND estado <> 'anulada' AND tipo_venta='CREDITO' AND fecha>=$2::timestamptz AND fecha<=$3::timestamptz`,
     [empresaId, b.start, b.end]
   );
   const porPagarQ = p.query<{ total: number }>(
     `SELECT COALESCE(SUM(total),0)::float8 AS total FROM ${tCompras}
-      WHERE empresa_id=$1::uuid AND tipo_pago='credito' AND fecha>=$2::timestamptz AND fecha<=$3::timestamptz`,
+      WHERE empresa_id=$1::uuid AND estado <> 'anulada' AND tipo_pago='credito' AND fecha>=$2::timestamptz AND fecha<=$3::timestamptz`,
     [empresaId, b.start, b.end]
   );
-  // Compras agrupadas por numero_control (modelo plano): una fila por compra real.
+  // Compras agrupadas por numero_control (modelo plano): una fila por compra real. Excluye anuladas.
   const movsQ = p.query<MovimientoEstadoCuenta>(
     `SELECT fecha, tipo, referencia, descripcion, entrada, salida FROM (
         SELECT fecha, 'Venta'::text AS tipo, numero_control AS referencia,
                'Venta a cliente'::text AS descripcion, total::float8 AS entrada, 0::float8 AS salida
           FROM ${tVentas}
-         WHERE empresa_id=$1::uuid AND fecha>=$2::timestamptz AND fecha<=$3::timestamptz
+         WHERE empresa_id=$1::uuid AND estado <> 'anulada' AND fecha>=$2::timestamptz AND fecha<=$3::timestamptz
         UNION ALL
         SELECT MIN(fecha) AS fecha, 'Compra'::text, numero_control,
                MIN(proveedor_nombre), 0::float8, SUM(total)::float8
           FROM ${tCompras}
-         WHERE empresa_id=$1::uuid AND fecha>=$2::timestamptz AND fecha<=$3::timestamptz
+         WHERE empresa_id=$1::uuid AND estado <> 'anulada' AND fecha>=$2::timestamptz AND fecha<=$3::timestamptz
          GROUP BY numero_control
         UNION ALL
         SELECT fecha::timestamptz, 'Gasto'::text, COALESCE(categoria,''),
@@ -149,19 +150,17 @@ export async function getReporteProveedores(
 
   const totalProvQ = p.query<{ n: number }>(
     `SELECT count(*)::int AS n FROM ${tProv} WHERE empresa_id=$1::uuid`, [empresaId]);
+  // Reporte de proveedores: todas las métricas excluyen compras anuladas.
   const mesQ = p.query<{ proveedores: number; total: number }>(
     `SELECT count(DISTINCT proveedor_id)::int AS proveedores, COALESCE(SUM(total),0)::float8 AS total
-       FROM ${tC} WHERE empresa_id=$1::uuid AND fecha>=$2::timestamptz AND fecha<=$3::timestamptz`,
+       FROM ${tC} WHERE empresa_id=$1::uuid AND estado <> 'anulada' AND fecha>=$2::timestamptz AND fecha<=$3::timestamptz`,
     [empresaId, b.start, b.end]);
-  // Última compra: total de la compra agrupada por numero_control (modelo plano).
   const ultimaQ = p.query<{ numero_control: string; proveedor_nombre: string; total: number; fecha: string }>(
     `SELECT numero_control, MIN(proveedor_nombre) AS proveedor_nombre,
             SUM(total)::float8 AS total, MAX(fecha) AS fecha
-       FROM ${tC} WHERE empresa_id=$1::uuid AND fecha>=$2::timestamptz AND fecha<=$3::timestamptz
+       FROM ${tC} WHERE empresa_id=$1::uuid AND estado <> 'anulada' AND fecha>=$2::timestamptz AND fecha<=$3::timestamptz
       GROUP BY numero_control
       ORDER BY MAX(fecha) DESC LIMIT 1`, [empresaId, b.start, b.end]);
-  // Proveedores con sus métricas del mes (LEFT JOIN para incluir los sin compras).
-  // `cantidad` = compras reales (numero_control distintos), no líneas.
   const provListQ = p.query<ProveedorReporteRow>(
     `SELECT pr.id, pr.nombre, pr.ruc, pr.telefono,
             COALESCE(cc.cantidad,0)::int AS cantidad,
@@ -173,7 +172,7 @@ export async function getReporteProveedores(
                 count(DISTINCT numero_control)::int AS cantidad,
                 SUM(total)::float8 AS total,
                 MAX(fecha) AS ultima_compra
-           FROM ${tC} WHERE empresa_id=$1::uuid AND fecha>=$2::timestamptz AND fecha<=$3::timestamptz
+           FROM ${tC} WHERE empresa_id=$1::uuid AND estado <> 'anulada' AND fecha>=$2::timestamptz AND fecha<=$3::timestamptz
           GROUP BY proveedor_id
        ) cc ON cc.proveedor_id = pr.id
       WHERE pr.empresa_id=$1::uuid
@@ -206,53 +205,54 @@ export async function getReporteCompras(
   const schema = assertAllowedChatDataSchema(schemaRaw);
   const tC = quoteSchemaTable(schema, "compras");
   const p = pool();
-  const per = `c.empresa_id=$1::uuid AND c.fecha>=$2::timestamptz AND c.fecha<=$3::timestamptz`;
+  // `perNet` para métricas (excluye anuladas). `perAll` para listados de detalle (incluye anuladas, con badge).
+  const perNet = `c.empresa_id=$1::uuid AND c.estado <> 'anulada' AND c.fecha>=$2::timestamptz AND c.fecha<=$3::timestamptz`;
+  const perAll = `c.empresa_id=$1::uuid AND c.fecha>=$2::timestamptz AND c.fecha<=$3::timestamptz`;
   const args = [empresaId, b.start, b.end];
 
-  // Totales: compras distintas (numero_control), líneas (count *) y total (suma de líneas).
   const totQ = p.query<{ compras: number; items: number; total: number }>(
     `SELECT count(DISTINCT numero_control)::int AS compras, count(*)::int AS items,
             COALESCE(SUM(total),0)::float8 AS total
-       FROM ${tC} c WHERE ${per}`, args);
-  // Compra más alta: total agrupado por numero_control.
+       FROM ${tC} c WHERE ${perNet}`, args);
+  const anuladasQ = p.query<{ compras: number; total: number }>(
+    `SELECT count(DISTINCT numero_control)::int AS compras, COALESCE(SUM(total),0)::float8 AS total
+       FROM ${tC} c WHERE c.empresa_id=$1::uuid AND c.estado = 'anulada' AND c.fecha>=$2::timestamptz AND c.fecha<=$3::timestamptz`, args);
   const masAltaQ = p.query<{ numero_control: string; proveedor_nombre: string; total: number }>(
     `SELECT numero_control, MIN(proveedor_nombre) AS proveedor_nombre, SUM(total)::float8 AS total
-       FROM ${tC} c WHERE ${per} GROUP BY numero_control ORDER BY total DESC LIMIT 1`, args);
+       FROM ${tC} c WHERE ${perNet} GROUP BY numero_control ORDER BY total DESC LIMIT 1`, args);
   const provMayorQ = p.query<{ proveedor_nombre: string; total: number }>(
-    `SELECT proveedor_nombre, SUM(total)::float8 AS total FROM ${tC} c WHERE ${per}
+    `SELECT proveedor_nombre, SUM(total)::float8 AS total FROM ${tC} c WHERE ${perNet}
       GROUP BY proveedor_id, proveedor_nombre ORDER BY total DESC LIMIT 1`, args);
   const prodCantQ = p.query<{ producto_nombre: string; cantidad: number }>(
-    `SELECT producto_nombre, SUM(cantidad)::float8 AS cantidad FROM ${tC} c WHERE ${per}
+    `SELECT producto_nombre, SUM(cantidad)::float8 AS cantidad FROM ${tC} c WHERE ${perNet}
       GROUP BY producto_id, producto_nombre ORDER BY cantidad DESC LIMIT 1`, args);
   const prodGastoQ = p.query<{ producto_nombre: string; gasto: number }>(
-    `SELECT producto_nombre, SUM(total)::float8 AS gasto FROM ${tC} c WHERE ${per}
+    `SELECT producto_nombre, SUM(total)::float8 AS gasto FROM ${tC} c WHERE ${perNet}
       GROUP BY producto_id, producto_nombre ORDER BY gasto DESC LIMIT 1`, args);
-  // Total por proveedor (lista).
   const porProvQ = p.query<CompraProveedorTotal>(
     `SELECT proveedor_nombre, count(DISTINCT numero_control)::int AS compras, SUM(total)::float8 AS total
-       FROM ${tC} c WHERE ${per} GROUP BY proveedor_id, proveedor_nombre ORDER BY total DESC`, args);
-  // Total por producto (lista).
+       FROM ${tC} c WHERE ${perNet} GROUP BY proveedor_id, proveedor_nombre ORDER BY total DESC`, args);
   const porProdQ = p.query<CompraProductoTotal>(
     `SELECT producto_nombre, SUM(cantidad)::float8 AS cantidad, SUM(total)::float8 AS gasto
-       FROM ${tC} c WHERE ${per} GROUP BY producto_id, producto_nombre ORDER BY gasto DESC`, args);
-  // Detalle por compra (agrupado por numero_control). tiene_comprobante = bool_or sobre las líneas.
+       FROM ${tC} c WHERE ${perNet} GROUP BY producto_id, producto_nombre ORDER BY gasto DESC`, args);
+  // Detalle por compra: INCLUYE anuladas para que se vean con badge.
   const comprasQ = p.query<CompraReporteRow>(
     `SELECT numero_control, MIN(fecha) AS fecha, MIN(proveedor_nombre) AS proveedor_nombre,
             count(*)::int AS items_count, SUM(subtotal)::float8 AS subtotal,
             SUM(monto_iva)::float8 AS monto_iva, SUM(total)::float8 AS total,
             MIN(tipo_pago) AS tipo_pago, MIN(nro_timbrado) AS nro_timbrado,
-            bool_or(comprobante_storage_path IS NOT NULL) AS tiene_comprobante
-       FROM ${tC} c WHERE ${per}
+            bool_or(comprobante_storage_path IS NOT NULL) AS tiene_comprobante,
+            MIN(estado) AS estado
+       FROM ${tC} c WHERE ${perAll}
       GROUP BY numero_control ORDER BY MIN(fecha) DESC, numero_control DESC`, args);
-  // Detalle por línea (una fila de compras = una línea).
   const itemsQ = p.query<ItemCompradoRow>(
     `SELECT numero_control, fecha, proveedor_nombre, producto_nombre,
             cantidad::float8 AS cantidad, costo_unitario::float8 AS costo_unitario,
             total::float8 AS total_linea
-       FROM ${tC} c WHERE ${per} ORDER BY fecha DESC, numero_control DESC`, args);
+       FROM ${tC} c WHERE ${perAll} ORDER BY fecha DESC, numero_control DESC`, args);
 
-  const [tot, masAlta, provMayor, prodCant, prodGasto, porProv, porProd, compras, items] =
-    await Promise.all([totQ, masAltaQ, provMayorQ, prodCantQ, prodGastoQ, porProvQ, porProdQ, comprasQ, itemsQ]);
+  const [tot, anul, masAlta, provMayor, prodCant, prodGasto, porProv, porProd, compras, items] =
+    await Promise.all([totQ, anuladasQ, masAltaQ, provMayorQ, prodCantQ, prodGastoQ, porProvQ, porProdQ, comprasQ, itemsQ]);
 
   return {
     mes: b.mes,
@@ -275,6 +275,7 @@ export async function getReporteCompras(
       total: num(c.total),
       nro_timbrado: c.nro_timbrado || null,
       tiene_comprobante: c.tiene_comprobante === true,
+      estado: c.estado || "registrada",
     })),
     items: items.rows.map((i) => ({
       ...i,
@@ -282,6 +283,7 @@ export async function getReporteCompras(
       costo_unitario: num(i.costo_unitario),
       total_linea: num(i.total_linea),
     })),
+    anuladas: { cantidad: num(anul.rows[0]?.compras), total: num(anul.rows[0]?.total) },
   };
 }
 
@@ -303,46 +305,46 @@ export async function getReporteVentas(
   const tVI = quoteSchemaTable(schema, "ventas_items");
   const tCli = quoteSchemaTable(schema, "clientes");
   const p = pool();
-  const perV = `v.empresa_id=$1::uuid AND v.fecha>=$2::timestamptz AND v.fecha<=$3::timestamptz`;
+  // `perVNet` para métricas (excluye anuladas). `perVAll` para listados (incluye anuladas con badge).
+  const perVNet = `v.empresa_id=$1::uuid AND v.estado <> 'anulada' AND v.fecha>=$2::timestamptz AND v.fecha<=$3::timestamptz`;
+  const perVAll = `v.empresa_id=$1::uuid AND v.fecha>=$2::timestamptz AND v.fecha<=$3::timestamptz`;
   const args = [empresaId, b.start, b.end];
 
-  // Totales de cabecera.
   const totQ = p.query<{ ventas: number; total: number }>(
     `SELECT count(*)::int AS ventas, COALESCE(SUM(total),0)::float8 AS total
-       FROM ${tV} v WHERE ${perV}`, args);
-  // Ítems / unidades.
+       FROM ${tV} v WHERE ${perVNet}`, args);
+  const anuladasQ = p.query<{ ventas: number; total: number }>(
+    `SELECT count(*)::int AS ventas, COALESCE(SUM(total),0)::float8 AS total
+       FROM ${tV} v WHERE v.empresa_id=$1::uuid AND v.estado = 'anulada' AND v.fecha>=$2::timestamptz AND v.fecha<=$3::timestamptz`, args);
   const itemsTotQ = p.query<{ items: number; unidades: number }>(
     `SELECT count(*)::int AS items, COALESCE(SUM(vi.cantidad),0)::float8 AS unidades
-       FROM ${tVI} vi JOIN ${tV} v ON v.id=vi.venta_id WHERE ${perV}`, args);
-  // Desglose por tipo_precio (null → minorista).
+       FROM ${tVI} vi JOIN ${tV} v ON v.id=vi.venta_id WHERE ${perVNet}`, args);
   const tipoPrecioQ = p.query<{ tipo_precio: string; items: number; total: number }>(
     `SELECT ${TP_SQL} AS tipo_precio, count(*)::int AS items, COALESCE(SUM(vi.total_linea),0)::float8 AS total
-       FROM ${tVI} vi JOIN ${tV} v ON v.id=vi.venta_id WHERE ${perV}
+       FROM ${tVI} vi JOIN ${tV} v ON v.id=vi.venta_id WHERE ${perVNet}
       GROUP BY ${TP_SQL}`, args);
-  // Total por producto.
   const porProdQ = p.query<VentaProductoTotal>(
     `SELECT vi.producto_nombre, SUM(vi.cantidad)::float8 AS cantidad, SUM(vi.total_linea)::float8 AS total
-       FROM ${tVI} vi JOIN ${tV} v ON v.id=vi.venta_id WHERE ${perV}
+       FROM ${tVI} vi JOIN ${tV} v ON v.id=vi.venta_id WHERE ${perVNet}
       GROUP BY vi.producto_id, vi.producto_nombre ORDER BY total DESC`, args);
-  // Detalle de ventas (con cliente opcional).
+  // Detalle de ventas: INCLUYE anuladas para verlas con badge.
   const ventasQ = p.query<VentaReporteRow>(
-    `SELECT v.id, v.numero_control, v.fecha, c.nombre AS cliente, v.metodo_pago,
+    `SELECT v.id, v.numero_control, v.fecha, c.nombre AS cliente, v.metodo_pago, v.estado,
             (SELECT count(*) FROM ${tVI} vi WHERE vi.venta_id=v.id)::int AS items_count,
             v.total::float8 AS total
        FROM ${tV} v
        LEFT JOIN ${tCli} c ON c.id=v.cliente_id AND c.empresa_id=v.empresa_id
-      WHERE ${perV} ORDER BY v.fecha DESC, v.numero_control DESC`, args);
-  // Detalle por línea.
+      WHERE ${perVAll} ORDER BY v.fecha DESC, v.numero_control DESC`, args);
   const itemsQ = p.query<ItemVendidoRow>(
     `SELECT v.numero_control, v.fecha, vi.producto_nombre,
             vi.cantidad::float8 AS cantidad, vi.precio_venta::float8 AS precio_venta,
             vi.subtotal::float8 AS subtotal, vi.monto_iva::float8 AS monto_iva,
             vi.total_linea::float8 AS total_linea, ${TP_SQL} AS tipo_precio
-       FROM ${tVI} vi JOIN ${tV} v ON v.id=vi.venta_id WHERE ${perV}
+       FROM ${tVI} vi JOIN ${tV} v ON v.id=vi.venta_id WHERE ${perVAll}
       ORDER BY v.fecha DESC, v.numero_control DESC`, args);
 
-  const [tot, itemsTot, tipoPrecio, porProd, ventas, items] = await Promise.all([
-    totQ, itemsTotQ, tipoPrecioQ, porProdQ, ventasQ, itemsQ]);
+  const [tot, anul, itemsTot, tipoPrecio, porProd, ventas, items] = await Promise.all([
+    totQ, anuladasQ, itemsTotQ, tipoPrecioQ, porProdQ, ventasQ, itemsQ]);
 
   const cantidadVentas = num(tot.rows[0]?.ventas);
   const totalVendido = num(tot.rows[0]?.total);
@@ -371,6 +373,7 @@ export async function getReporteVentas(
       metodo_pago: v.metodo_pago || null,
       items_count: num(v.items_count),
       total: num(v.total),
+      estado: v.estado || "completada",
     })),
     items: items.rows.map((i) => ({
       ...i,
@@ -381,6 +384,7 @@ export async function getReporteVentas(
       total_linea: num(i.total_linea),
       tipo_precio: normTipoPrecio(i.tipo_precio),
     })),
+    anuladas: { cantidad: num(anul.rows[0]?.ventas), total: num(anul.rows[0]?.total) },
   };
 }
 
@@ -416,7 +420,8 @@ export async function getReporteConciliacion(
         JOIN ${tV} v ON v.id=d.venta_id AND v.empresa_id=d.empresa_id
         LEFT JOIN ${tCli} c ON c.id=v.cliente_id AND c.empresa_id=v.empresa_id
         LEFT JOIN ${tEnt} eb ON eb.id=d.entidad_bancaria_id AND eb.empresa_id=d.empresa_id
-       WHERE d.empresa_id=$1::uuid AND v.fecha>=$2::timestamptz AND v.fecha<=$3::timestamptz
+       WHERE d.empresa_id=$1::uuid AND v.estado <> 'anulada'
+         AND v.fecha>=$2::timestamptz AND v.fecha<=$3::timestamptz
          AND d.metodo_pago IS NOT NULL AND d.metodo_pago <> 'efectivo'
       UNION ALL
       SELECT cc.id::text AS id, 'cobro'::text AS tipo, cc.fecha_pago AS fecha,

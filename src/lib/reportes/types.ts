@@ -58,6 +58,7 @@ export interface CompraReporteRow {
   tipo_pago: string;
   nro_timbrado: string | null;
   tiene_comprobante: boolean; // true si CUALQUIER línea del grupo tiene comprobante
+  estado: string;             // 'registrada' | 'anulada'
 }
 
 /** Una línea de compra (una fila de `compras`). */
@@ -85,17 +86,18 @@ export interface CompraProductoTotal {
 
 export interface ComprasReporte {
   mes: string;
-  totalComprado: number;
-  cantidad: number;       // COUNT(DISTINCT numero_control) — compras distintas
-  cantidadItems: number;  // count(*) — líneas compradas
+  totalComprado: number;  // excluye anuladas
+  cantidad: number;       // COUNT(DISTINCT numero_control) — compras distintas, excluye anuladas
+  cantidadItems: number;  // count(*) — líneas compradas, excluye anuladas
   compraMasAlta: { numero_control: string; proveedor_nombre: string; total: number } | null;
   proveedorMayor: { proveedor_nombre: string; total: number } | null;
   productoMasComprado: { producto_nombre: string; cantidad: number } | null;
   productoMayorGasto: { producto_nombre: string; gasto: number } | null;
   porProveedor: CompraProveedorTotal[];
   porProducto: CompraProductoTotal[];
-  compras: CompraReporteRow[];
+  compras: CompraReporteRow[];  // incluye anuladas (badge en UI)
   items: ItemCompradoRow[];
+  anuladas: { cantidad: number; total: number };
 }
 
 // ── Ventas (header `ventas` + líneas `ventas_items`, con tipo_precio) ──────────
@@ -123,6 +125,7 @@ export interface VentaReporteRow {
   metodo_pago: string | null;
   items_count: number;
   total: number;
+  estado: string;   // 'completada' | 'anulada'
 }
 
 /** Una línea de venta. tipo_precio nunca null en la salida (null → 'minorista'). */
@@ -140,16 +143,17 @@ export interface ItemVendidoRow {
 
 export interface VentasReporte {
   mes: string;
-  totalVendido: number;
-  cantidadVentas: number;
-  cantidadItems: number;     // líneas vendidas
-  ticketPromedio: number;
-  unidadesVendidas: number;  // SUM(cantidad)
-  /** Desglose por nivel de precio (datos null se cuentan como minorista). */
+  totalVendido: number;      // excluye anuladas (neto)
+  cantidadVentas: number;    // excluye anuladas
+  cantidadItems: number;     // líneas vendidas, excluye anuladas
+  ticketPromedio: number;    // sobre neto
+  unidadesVendidas: number;  // SUM(cantidad), excluye anuladas
+  /** Desglose por nivel de precio (datos null se cuentan como minorista). Excluye anuladas. */
   porTipoPrecio: Record<TipoPrecioReporte, VentaTipoPrecioTotal>;
   porProducto: VentaProductoTotal[];
-  ventas: VentaReporteRow[];
+  ventas: VentaReporteRow[];  // incluye anuladas (badge en UI)
   items: ItemVendidoRow[];
+  anuladas: { cantidad: number; total: number };
 }
 
 // ── Conciliación bancaria (ventas_pagos_detalle, venta-céntrico) ──────────────

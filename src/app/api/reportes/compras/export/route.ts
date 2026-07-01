@@ -18,9 +18,11 @@ export async function GET(request: NextRequest) {
     const resumen = [
       { concepto: "Reporte", valor: "Compras" },
       { concepto: "Mes", valor: mes },
-      { concepto: "Total comprado", valor: r.totalComprado },
-      { concepto: "Cantidad de compras", valor: r.cantidad },
+      { concepto: "Total comprado (neto)", valor: r.totalComprado },
+      { concepto: "Cantidad de compras (netas)", valor: r.cantidad },
       { concepto: "Cantidad de ítems (líneas)", valor: r.cantidadItems },
+      { concepto: "Compras anuladas (cantidad)", valor: r.anuladas.cantidad },
+      { concepto: "Compras anuladas (monto)", valor: r.anuladas.total },
       { concepto: "Compra más alta", valor: r.compraMasAlta ? `${r.compraMasAlta.numero_control} · ${r.compraMasAlta.proveedor_nombre} (${r.compraMasAlta.total})` : "—" },
       { concepto: "Proveedor con mayor monto", valor: r.proveedorMayor ? `${r.proveedorMayor.proveedor_nombre} (${r.proveedorMayor.total})` : "—" },
       { concepto: "Producto más comprado (cant.)", valor: r.productoMasComprado ? `${r.productoMasComprado.producto_nombre} (${r.productoMasComprado.cantidad})` : "—" },
@@ -45,6 +47,7 @@ export async function GET(request: NextRequest) {
       sheetFromRows("Compras", r.compras, [
         { header: "Fecha", value: (c) => (c.fecha ? new Date(c.fecha) : ""), width: 20 },
         { header: "N° Compra", value: (c) => c.numero_control, width: 16 },
+        { header: "Estado", value: (c) => c.estado, width: 12 },
         { header: "Proveedor", value: (c) => c.proveedor_nombre, width: 30 },
         { header: "Ítems", value: (c) => c.items_count, width: 8 },
         { header: "Subtotal", value: (c) => c.subtotal, width: 14 },

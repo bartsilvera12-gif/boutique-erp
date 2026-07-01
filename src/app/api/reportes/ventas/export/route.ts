@@ -20,11 +20,13 @@ export async function GET(request: NextRequest) {
     const resumen = [
       { concepto: "Reporte", valor: "Ventas" },
       { concepto: "Mes", valor: mes },
-      { concepto: "Total vendido", valor: r.totalVendido },
-      { concepto: "Cantidad de ventas", valor: r.cantidadVentas },
+      { concepto: "Total vendido (neto)", valor: r.totalVendido },
+      { concepto: "Cantidad de ventas (netas)", valor: r.cantidadVentas },
       { concepto: "Cantidad de ítems (líneas)", valor: r.cantidadItems },
       { concepto: "Ticket promedio", valor: Math.round(r.ticketPromedio) },
       { concepto: "Unidades vendidas", valor: r.unidadesVendidas },
+      { concepto: "Ventas anuladas (cantidad)", valor: r.anuladas.cantidad },
+      { concepto: "Ventas anuladas (monto)", valor: r.anuladas.total },
     ];
 
     const tipoRows = (["minorista", "mayorista", "distribuidor", "costo"] as const).map((t) => ({
@@ -49,6 +51,7 @@ export async function GET(request: NextRequest) {
       sheetFromRows("Ventas", r.ventas, [
         { header: "Fecha", value: (v) => (v.fecha ? new Date(v.fecha) : ""), width: 20 },
         { header: "N° Venta", value: (v) => v.numero_control, width: 16 },
+        { header: "Estado", value: (v) => v.estado, width: 12 },
         { header: "Cliente", value: (v) => v.cliente ?? "", width: 28 },
         { header: "Método pago", value: (v) => v.metodo_pago ?? "", width: 14 },
         { header: "Ítems", value: (v) => v.items_count, width: 8 },

@@ -64,11 +64,16 @@ export default function VentasReportePage() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-            <StatCard compact label="Total vendido" value={formatGs(data.totalVendido)} accent />
+            <StatCard compact label="Total vendido" value={formatGs(data.totalVendido)} hint="neto (excluye anuladas)" accent />
             <StatCard compact label="Ventas" value={String(data.cantidadVentas)} hint={`${data.cantidadItems} ítems / líneas`} />
             <StatCard compact label="Ticket promedio" value={formatGs(data.ticketPromedio)} hint="por venta" />
             <StatCard compact label="Unidades vendidas" value={String(data.unidadesVendidas)} />
-            <StatCard compact label="Ítems vendidos" value={String(data.cantidadItems)} />
+            <StatCard
+              compact
+              label="Anuladas"
+              value={data.anuladas.cantidad > 0 ? formatGs(data.anuladas.total) : "—"}
+              hint={data.anuladas.cantidad > 0 ? `${data.anuladas.cantidad} venta${data.anuladas.cantidad === 1 ? "" : "s"}` : "sin anulaciones"}
+            />
           </div>
 
           {/* Desglose por tipo de precio */}
@@ -99,21 +104,30 @@ export default function VentasReportePage() {
                       <th className="py-2.5 pr-4 font-medium">N° Venta</th>
                       <th className="py-2.5 pr-4 font-medium">Cliente</th>
                       <th className="py-2.5 pr-4 font-medium">Pago</th>
+                      <th className="py-2.5 pr-4 font-medium">Estado</th>
                       <th className="py-2.5 pr-4 font-medium text-right">Ítems</th>
                       <th className="py-2.5 font-medium text-right">Total</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {data.ventas.map((v) => (
-                      <tr key={v.id} className="border-b border-slate-100 last:border-0">
-                        <td className="py-3 pr-4 text-slate-600 text-xs tabular-nums">{formatFecha(v.fecha)}</td>
-                        <td className="py-3 pr-4 font-mono text-xs text-slate-500">{v.numero_control}</td>
-                        <td className="py-3 pr-4 text-slate-700">{v.cliente ?? "—"}</td>
-                        <td className="py-3 pr-4 text-slate-600 capitalize">{v.metodo_pago ?? "—"}</td>
-                        <td className="py-3 pr-4 text-right tabular-nums text-slate-700">{v.items_count}</td>
-                        <td className="py-3 text-right tabular-nums font-semibold text-slate-800">{formatGs(v.total)}</td>
-                      </tr>
-                    ))}
+                    {data.ventas.map((v) => {
+                      const anul = v.estado === "anulada";
+                      return (
+                        <tr key={v.id} className={`border-b border-slate-100 last:border-0 ${anul ? "bg-red-50/40" : ""}`}>
+                          <td className="py-3 pr-4 text-slate-600 text-xs tabular-nums">{formatFecha(v.fecha)}</td>
+                          <td className="py-3 pr-4 font-mono text-xs text-slate-500">{v.numero_control}</td>
+                          <td className="py-3 pr-4 text-slate-700">{v.cliente ?? "—"}</td>
+                          <td className="py-3 pr-4 text-slate-600 capitalize">{v.metodo_pago ?? "—"}</td>
+                          <td className="py-3 pr-4">
+                            <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${anul ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}`}>
+                              {anul ? "Anulada" : "Completada"}
+                            </span>
+                          </td>
+                          <td className="py-3 pr-4 text-right tabular-nums text-slate-700">{v.items_count}</td>
+                          <td className={`py-3 text-right tabular-nums font-semibold ${anul ? "text-red-700 line-through" : "text-slate-800"}`}>{formatGs(v.total)}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
