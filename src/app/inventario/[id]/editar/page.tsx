@@ -647,6 +647,30 @@ export default function EditarProductoPage() {
             <p className="mt-1.5 text-xs text-gray-400">
               Código escaneable para lector o etiqueta (EAN-13). Debe ser único. (opcional)
             </p>
+            {form.codigo_barras.trim().length === 13 && codigoOriginal === form.codigo_barras.trim() && (
+              <div className="mt-3 flex items-center gap-2">
+                <label className="text-xs text-slate-600">Copias:</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={500}
+                  defaultValue={1}
+                  id="etiqueta-copias"
+                  className="w-20 rounded-md border border-slate-200 px-2 py-1.5 text-xs"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const n = Math.max(1, Math.min(500, Number((document.getElementById("etiqueta-copias") as HTMLInputElement)?.value) || 1));
+                    window.open(`/inventario/${id}/etiqueta?copias=${n}`, "_blank", "noopener,noreferrer");
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-900 border border-emerald-200 hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  🏷️ Imprimir etiquetas
+                </button>
+                <span className="text-[11px] text-slate-400">Tamaño 50×30 mm (impresora térmica).</span>
+              </div>
+            )}
           </div>
 
           {/* Imagen del producto */}
