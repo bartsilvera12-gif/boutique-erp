@@ -662,7 +662,7 @@ export default function EditarProductoPage() {
                   type="button"
                   onClick={() => {
                     const n = Math.max(1, Math.min(500, Number((document.getElementById("etiqueta-copias") as HTMLInputElement)?.value) || 1));
-                    window.open(`/inventario/${id}/etiqueta?copias=${n}`, "_blank", "noopener,noreferrer");
+                    window.open(`/api/productos/${id}/etiqueta?copias=${n}`, "_blank", "noopener,noreferrer");
                   }}
                   className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-900 border border-emerald-200 hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors"
                 >
