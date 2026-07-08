@@ -86,9 +86,9 @@ export function ean13Svg(code: string, opts: Ean13SvgOptions = {}): string {
   const leftCenter = (3 + 21) * moduleW;
   const rightCenter = (3 + 42 + 5 + 21) * moduleW;
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${totalHeight}" width="100%" preserveAspectRatio="xMidYMid meet">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${totalHeight}" width="100%" preserveAspectRatio="xMidYMid meet" shape-rendering="crispEdges">
     ${rects}
-    <g font-family="Helvetica, Arial, sans-serif" font-size="${fontSize}" fill="#000">
+    <g font-family="Helvetica, Arial, sans-serif" font-size="${fontSize}" fill="#000" shape-rendering="auto">
       <text x="0" y="${textY}">${first}</text>
       <text x="${leftCenter.toFixed(2)}" y="${textY}" text-anchor="middle" letter-spacing="1">${leftDigits}</text>
       <text x="${rightCenter.toFixed(2)}" y="${textY}" text-anchor="middle" letter-spacing="1">${rightDigits}</text>

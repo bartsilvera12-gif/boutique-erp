@@ -42,7 +42,8 @@ export default function EtiquetaPage() {
 
   const barcodeSvg = useMemo(() => {
     if (!producto?.codigo_barras) return null;
-    try { return ean13Svg(producto.codigo_barras, { width: 190, barHeight: 55, fontSize: 12 }); }
+    // 285 unidades ≈ ~46mm impresas, con barras altas para lectura fiable.
+    try { return ean13Svg(producto.codigo_barras, { width: 285, barHeight: 90, fontSize: 18 }); }
     catch { return null; }
   }, [producto?.codigo_barras]);
 
@@ -64,7 +65,10 @@ export default function EtiquetaPage() {
   return (
     <>
       <style>{`
-        @page { size: ${anchoMm}mm ${altoMm}mm; margin: 0; }
+        /* size con "auto" en alto: el navegador arma una hoja de ${anchoMm}mm de
+           ancho por etiqueta, respetando el corte físico de la térmica. Idéntico
+           patrón al ticket, así el preview se ve del tamaño real. */
+        @page { size: ${anchoMm}mm auto; margin: 0; }
         html, body { margin: 0; padding: 0; background: #f3f4f6; }
         .toolbar {
           position: sticky; top: 0; z-index: 10;
@@ -82,26 +86,25 @@ export default function EtiquetaPage() {
         .label {
           width: ${anchoMm}mm; height: ${altoMm}mm;
           background: white;
-          padding: 1.5mm 2mm;
+          padding: 1.2mm 1.5mm;
           box-sizing: border-box;
           display: flex; flex-direction: column;
-          align-items: center; justify-content: center;
-          gap: 0.6mm;
+          align-items: center; justify-content: space-between;
           overflow: hidden;
           page-break-after: always;
           box-shadow: 0 1px 2px rgba(0,0,0,.1);
         }
         .label:last-child { page-break-after: auto; }
         .label .name {
-          font: 700 8.5px/1.1 Helvetica, Arial, sans-serif;
+          font: 700 2.4mm/1.1 Helvetica, Arial, sans-serif;
           text-align: center;
           white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
           max-width: 100%;
         }
-        .label .barcode { width: 100%; display: flex; justify-content: center; }
-        .label .barcode svg { width: 100%; height: auto; max-height: ${altoMm * 0.55}mm; }
+        .label .barcode { width: 100%; flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; }
+        .label .barcode svg { width: 100%; height: 100%; }
         .label .price {
-          font: 700 10.5px/1 Helvetica, Arial, sans-serif;
+          font: 700 3mm/1 Helvetica, Arial, sans-serif;
         }
         @media print {
           html, body { background: white; }
