@@ -108,6 +108,20 @@ export default function EtiquetaPage() {
           .toolbar { display: none; }
           .sheet { padding: 0; gap: 0; }
           .label { box-shadow: none; }
+          /* Oculta Sidebar / Header / MobileBottomNav del AppShell — sólo deja las etiquetas. */
+          #neura-app-shell > *:not(#neura-main-column),
+          #neura-main-column > *:not(#neura-main-content) { display: none !important; }
+          #neura-app-shell,
+          #neura-main-column,
+          #neura-main-content {
+            display: block !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: white !important;
+          }
         }
       `}</style>
       <div className="toolbar">
