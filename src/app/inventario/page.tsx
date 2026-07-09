@@ -635,36 +635,16 @@ export default function InventarioPage() {
                 return (
                   <tr key={p.id} className="border-b border-slate-200 last:border-0 hover:bg-[#4FAEB2]/[0.04] transition-colors">
                     <td className="py-4 pr-4 font-medium text-gray-800">
-                      <div className="flex items-center gap-3">
-                        {p.imagen_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={p.imagen_url}
-                            alt=""
-                            width={40}
-                            height={40}
-                            loading="lazy"
-                            className="h-10 w-10 shrink-0 rounded-md object-cover border border-slate-200 bg-slate-50"
-                          />
-                        ) : (
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-dashed border-slate-200 bg-slate-50 text-slate-300" aria-hidden>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-5 w-5">
-                              <rect x="3" y="3" width="18" height="18" rx="2" />
-                              <circle cx="8.5" cy="9.5" r="1.5" />
-                              <path d="m21 15-5-5L5 21" />
-                            </svg>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2 flex-wrap min-w-0">
-                          <span className="truncate">{p.nombre}</span>
-                          {(() => {
-                            const v = p.es_vendible !== false;
-                            const i = p.es_insumo === true;
-                            if (v && i) return <span className="inline-flex items-center rounded-full bg-purple-100 text-purple-700 text-[10px] font-medium px-2 py-0.5">Mixto</span>;
-                            if (i) return <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-medium px-2 py-0.5">Insumo</span>;
-                            return null;
-                          })()}
-                        </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span>{p.nombre}</span>
+                        {(() => {
+                          const v = p.es_vendible !== false;
+                          const i = p.es_insumo === true;
+                          // Mixto/Insumo se siguen mostrando; Vendible queda oculto (redundante: ya hay tab).
+                          if (v && i) return <span className="inline-flex items-center rounded-full bg-purple-100 text-purple-700 text-[10px] font-medium px-2 py-0.5">Mixto</span>;
+                          if (i) return <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-medium px-2 py-0.5">Insumo</span>;
+                          return null;
+                        })()}
                       </div>
                     </td>
                     <td className="hidden py-4 pr-4 font-mono text-gray-500 lg:table-cell">{p.sku}</td>
