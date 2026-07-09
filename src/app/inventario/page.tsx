@@ -628,6 +628,9 @@ export default function InventarioPage() {
               {productosPagina.map((p) => {
                 const stockBajo = p.stock_actual <= p.stock_minimo;
                 const margen = calcularMargenVenta(p.costo_promedio, p.precio_venta);
+                // Prefer signed URL persistido; sino proxy que firma al vuelo desde imagen_path.
+                const imagenSrc: string | null = p.imagen_url
+                  || (p.imagen_path ? `/api/inventario/imagen?path=${encodeURIComponent(p.imagen_path)}` : null);
                 // "Sin control" SOLO para Menú (vendible sin stock). Los insumos
                 // (Materia prima) sí tienen stock real aunque controla_stock=false.
                 const sinControl =
@@ -636,10 +639,10 @@ export default function InventarioPage() {
                   <tr key={p.id} className="border-b border-slate-200 last:border-0 hover:bg-[#4FAEB2]/[0.04] transition-colors">
                     <td className="py-4 pr-4 font-medium text-gray-800">
                       <div className="flex items-center gap-3">
-                        {p.imagen_url ? (
+                        {imagenSrc ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
-                            src={p.imagen_url}
+                            src={imagenSrc}
                             alt=""
                             width={40}
                             height={40}
