@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import MontoInput from "@/components/ui/MontoInput";
 import ProductPickerModal, { type ProductoPickerItem, type AgregarVentaPayload } from "@/components/inventario/ProductPickerModal";
 import { saveVenta, type FaltanteStock } from "@/lib/ventas/storage";
-import { getProductos } from "@/lib/inventario/storage";
 import type { TipoIvaVenta, TipoVenta, MonedaVenta, LineaVenta, MetodoPago, TipoPrecioVenta } from "@/lib/ventas/types";
 import type { Producto } from "@/lib/inventario/types";
 
@@ -248,12 +247,14 @@ export default function NuevaVentaPage() {
     return true;
   }
 
+  // Precarga de catálogo completo desactivada: con >500 productos el endpoint
+  // /api/productos es pesado y bajo carga alta el backend puede timeouar
+  // (502 en Cloudflare). Para agregar productos usar SIEMPRE el buscador F3
+  // (ProductPickerModal) — que usa /api/productos/search paginado y liviano.
+  // El combobox interno queda inactivo (sin data) hasta que refactoricemos
+  // para hacerlo lazy con debounce contra el mismo endpoint search.
   useEffect(() => {
-    let cancelled = false;
-    getProductos().then((data) => {
-      if (!cancelled) setProductos(data);
-    });
-    return () => { cancelled = true; };
+    // no-op — ver comentario arriba
   }, []);
 
   // Precarga al facturar un pedido (Caja): lee ?pedido_id=, trae el pedido y carga sus
