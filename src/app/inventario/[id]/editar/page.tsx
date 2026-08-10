@@ -12,6 +12,8 @@ import QuickNuevaCategoriaModal from "@/components/inventario/QuickNuevaCategori
 import SelectFromList from "@/components/inventario/SelectFromList";
 import ProveedoresCostos from "@/components/inventario/ProveedoresCostos";
 import { ShoppingBag, Boxes, ClipboardList, type LucideIcon } from "lucide-react";
+import EditPasswordGate from "@/components/inventario/EditPasswordGate";
+import { isUnlocked } from "@/lib/edit-password";
 
 // Opciones estándar de unidad de medida (UX simplificada gastro)
 const UNIDADES_OPCIONES = [
@@ -36,6 +38,9 @@ export default function EditarProductoPage() {
   const [cargando, setCargando] = useState(true);
   const [errorDuplicado, setErrorDuplicado] = useState<string | null>(null);
   const [errorGeneral, setErrorGeneral] = useState<string | null>(null);
+
+  const [unlocked, setUnlocked] = useState(false);
+  useEffect(() => { setUnlocked(isUnlocked()); }, []);
 
   // descripcion live separately because form se inicializa al cargar
   const [descripcion, setDescripcion] = useState("");
@@ -435,6 +440,20 @@ export default function EditarProductoPage() {
       <div className="space-y-8">
         <h1 className="text-3xl font-bold text-gray-800">Editar producto</h1>
         <p className="text-gray-500 animate-pulse">Cargando…</p>
+      </div>
+    );
+  }
+
+  if (!unlocked) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-3xl font-bold text-gray-800">Editar producto</h1>
+        <p className="text-gray-600">Se requiere contraseña para continuar.</p>
+        <EditPasswordGate
+          open
+          onClose={() => router.push("/inventario")}
+          onSuccess={() => setUnlocked(true)}
+        />
       </div>
     );
   }

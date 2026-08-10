@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getProductos } from "@/lib/inventario/storage";
 import type { Producto, MetodoValuacion } from "@/lib/inventario/types";
 import ExportExcelButton from "@/components/ui/ExportExcelButton";
@@ -10,6 +11,8 @@ import EdgeScrollArea from "@/components/ui/EdgeScrollArea";
 import StatCard from "@/components/ui/StatCard";
 import { useIsAdmin } from "@/lib/auth/use-is-admin";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import EditPasswordGate from "@/components/inventario/EditPasswordGate";
+import { isUnlocked } from "@/lib/edit-password";
 
 const inputFilterClass =
   "border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-[#0EA5E9] focus:outline-none";
@@ -48,6 +51,18 @@ interface UbicacionMin { id: string; nombre: string; tipo: string }
 
 export default function InventarioPage() {
   const { isAdmin } = useIsAdmin();
+  const router = useRouter();
+  const [gateOpen, setGateOpen] = useState(false);
+  const pendingAction = useRef<null | (() => void)>(null);
+
+  function requireUnlock(action: () => void) {
+    if (isUnlocked()) {
+      action();
+      return;
+    }
+    pendingAction.current = action;
+    setGateOpen(true);
+  }
   const [todos, setTodos] = useState<Producto[]>([]);
   const [ubicaciones, setUbicaciones] = useState<UbicacionMin[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -718,15 +733,16 @@ export default function InventarioPage() {
                     )}
                     <td className="py-4 pl-4 text-center">
                       <div className="inline-flex items-center gap-1.5">
-                        <Link
-                          href={`/inventario/${p.id}/editar`}
+                        <button
+                          type="button"
+                          onClick={() => requireUnlock(() => router.push(`/inventario/${p.id}/editar`))}
                           className="inline-flex items-center justify-center min-h-[40px] rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-colors"
                         >
                           Editar
-                        </Link>
+                        </button>
                         <button
                           type="button"
-                          onClick={() => { setBorrarTarget(p); setBorrarError(null); }}
+                          onClick={() => requireUnlock(() => { setBorrarTarget(p); setBorrarError(null); })}
                           className="inline-flex items-center justify-center min-h-[40px] rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:border-red-300 hover:bg-red-50 transition-colors"
                         >
                           Borrar
@@ -804,6 +820,17 @@ export default function InventarioPage() {
         )}
 
       </div>
+
+      <EditPasswordGate
+        open={gateOpen}
+        onClose={() => { setGateOpen(false); pendingAction.current = null; }}
+        onSuccess={() => {
+          setGateOpen(false);
+          const fn = pendingAction.current;
+          pendingAction.current = null;
+          if (fn) fn();
+        }}
+      />
 
       <ConfirmModal
         open={borrarTarget != null}
