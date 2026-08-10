@@ -43,6 +43,11 @@ export async function GET(request: NextRequest) {
         { header: "Ítems", value: (x) => x.items, width: 10 },
         { header: "Total", value: (x) => x.total, width: 16 },
       ]),
+      sheetFromRows("Por método de pago", r.porMetodoPago, [
+        { header: "Método", value: (x) => x.metodo, width: 16 },
+        { header: "Operaciones", value: (x) => x.cantidad, width: 12 },
+        { header: "Total cobrado", value: (x) => x.total, width: 16 },
+      ]),
       sheetFromRows("Por producto", r.porProducto, [
         { header: "Producto", value: (x) => x.producto_nombre, width: 32 },
         { header: "Cantidad", value: (x) => x.cantidad, width: 12 },

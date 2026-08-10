@@ -144,8 +144,55 @@ export async function POST(request: NextRequest) {
       tipoVenta === "CREDITO" && o.plazo_dias != null && String(o.plazo_dias).trim() !== ""
         ? parseInt(String(o.plazo_dias), 10)
         : null;
-    const metodoPago: "efectivo" | "tarjeta" | "transferencia" =
-      o.metodo_pago === "tarjeta" || o.metodo_pago === "transferencia" ? o.metodo_pago : "efectivo";
+    // Split payment: array de pagos { metodo, monto, entidad, ref, titular }.
+    // Si viene `pagos`, se persiste 1 fila por cada uno y `metodo_pago` de la
+    // cabecera se setea al método del pago más grande. Sin `pagos` se
+    // mantiene el flujo legacy (1 fila con monto = total).
+    type PagoParsed = {
+      metodo_pago: "efectivo" | "tarjeta" | "transferencia";
+      monto: number;
+      entidad_bancaria_id: string | null;
+      entidad_nombre_snapshot: string | null;
+      referencia: string | null;
+      titular: string | null;
+      observacion: string | null;
+    };
+    const rawPagos = (o.pagos ?? null) as unknown;
+    let pagos: PagoParsed[] | null = null;
+    if (Array.isArray(rawPagos) && rawPagos.length > 0) {
+      pagos = [];
+      for (const raw of rawPagos) {
+        if (!raw || typeof raw !== "object") continue;
+        const r = raw as Record<string, unknown>;
+        const m = r.metodo_pago;
+        if (m !== "efectivo" && m !== "tarjeta" && m !== "transferencia") {
+          return NextResponse.json(errorResponse("Método de pago inválido en split."), { status: 400 });
+        }
+        const monto = Number(r.monto);
+        if (!Number.isFinite(monto) || monto <= 0) {
+          return NextResponse.json(errorResponse("Monto de pago inválido."), { status: 400 });
+        }
+        const str = (v: unknown, max = 200): string | null =>
+          v === null || v === undefined || String(v).trim() === "" ? null : String(v).trim().slice(0, max);
+        pagos.push({
+          metodo_pago: m,
+          monto,
+          entidad_bancaria_id: r.entidad_bancaria_id ? String(r.entidad_bancaria_id) : null,
+          entidad_nombre_snapshot: str(r.entidad_nombre_snapshot),
+          referencia: str(r.referencia),
+          titular: str(r.titular),
+          observacion: str(r.observacion, 500),
+        });
+      }
+    }
+    let metodoPago: "efectivo" | "tarjeta" | "transferencia";
+    if (pagos && pagos.length > 0) {
+      const mayor = pagos.reduce((a, b) => (b.monto > a.monto ? b : a));
+      metodoPago = mayor.metodo_pago;
+    } else {
+      metodoPago =
+        o.metodo_pago === "tarjeta" || o.metodo_pago === "transferencia" ? o.metodo_pago : "efectivo";
+    }
     const clienteRaw = o.cliente_id;
     const clienteId =
       clienteRaw === null || clienteRaw === undefined || clienteRaw === ""
@@ -208,6 +255,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(errorResponse("Totales inválidos."), { status: 400 });
     }
 
+    // Split payment: Σ pagos debe = total (CONTADO). Se permite pequeño
+    // excedente para vuelto en efectivo si hay al menos un pago efectivo.
+    if (pagos && pagos.length > 0 && tipoVenta === "CONTADO") {
+      const sumaPagos = pagos.reduce((a, b) => a + b.monto, 0);
+      const hayEfectivo = pagos.some((p) => p.metodo_pago === "efectivo");
+      const diff = sumaPagos - totalDeclarado;
+      // Tolerancia de 1 Gs por redondeos.
+      if (diff < -1) {
+        return NextResponse.json(
+          errorResponse(`Los pagos (${sumaPagos}) no cubren el total (${totalDeclarado}).`),
+          { status: 400 }
+        );
+      }
+      if (diff > 1 && !hayEfectivo) {
+        return NextResponse.json(
+          errorResponse(`Los pagos (${sumaPagos}) exceden el total (${totalDeclarado}) y no hay efectivo para vuelto.`),
+          { status: 400 }
+        );
+      }
+    }
+
     if (moneda === "USD" && tipoCambio <= 0) {
       return NextResponse.json(errorResponse("Tipo de cambio inválido para USD."), { status: 400 });
     }
@@ -267,25 +335,40 @@ export async function POST(request: NextRequest) {
 
     // Detalle de cobro (conciliación) — best-effort, FUERA de la transacción de
     // venta. Si falla, la venta queda igual (no se rompe ni se afectan recetas).
-    // 1 detalle por venta: método = metodoPago; monto = total (suma = total).
     try {
-      const pd = (o.pago_detalle ?? null) as Record<string, unknown> | null;
-      const str = (v: unknown, max = 200) =>
-        v === null || v === undefined || String(v).trim() === "" ? null : String(v).trim().slice(0, max);
-      const fechaAcred = (() => {
-        const v = pd?.fecha_acreditacion;
-        return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
-      })();
-      await insertVentaPagoDetalle(schema, auth.empresa_id, ventaId, {
-        metodo_pago: metodoPago,
-        entidad_bancaria_id: pd?.entidad_bancaria_id ? String(pd.entidad_bancaria_id) : null,
-        entidad_nombre_snapshot: str(pd?.entidad_nombre_snapshot),
-        monto: totalDeclarado,
-        referencia: str(pd?.referencia),
-        titular: str(pd?.titular),
-        fecha_acreditacion: fechaAcred,
-        observacion: str(pd?.observacion, 500),
-      });
+      if (pagos && pagos.length > 0) {
+        for (const p of pagos) {
+          await insertVentaPagoDetalle(schema, auth.empresa_id, ventaId, {
+            metodo_pago: p.metodo_pago,
+            entidad_bancaria_id: p.entidad_bancaria_id,
+            entidad_nombre_snapshot: p.entidad_nombre_snapshot,
+            monto: p.monto,
+            referencia: p.referencia,
+            titular: p.titular,
+            fecha_acreditacion: null,
+            observacion: p.observacion,
+          });
+        }
+      } else {
+        // Legacy: 1 pago = total.
+        const pd = (o.pago_detalle ?? null) as Record<string, unknown> | null;
+        const str = (v: unknown, max = 200) =>
+          v === null || v === undefined || String(v).trim() === "" ? null : String(v).trim().slice(0, max);
+        const fechaAcred = (() => {
+          const v = pd?.fecha_acreditacion;
+          return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+        })();
+        await insertVentaPagoDetalle(schema, auth.empresa_id, ventaId, {
+          metodo_pago: metodoPago,
+          entidad_bancaria_id: pd?.entidad_bancaria_id ? String(pd.entidad_bancaria_id) : null,
+          entidad_nombre_snapshot: str(pd?.entidad_nombre_snapshot),
+          monto: totalDeclarado,
+          referencia: str(pd?.referencia),
+          titular: str(pd?.titular),
+          fecha_acreditacion: fechaAcred,
+          observacion: str(pd?.observacion, 500),
+        });
+      }
     } catch (e) {
       console.error("[ventas/create] pago_detalle best-effort fallo (venta OK):", e instanceof Error ? e.message : e);
     }

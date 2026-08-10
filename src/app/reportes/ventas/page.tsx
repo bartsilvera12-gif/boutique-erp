@@ -134,6 +134,35 @@ export default function VentasReportePage() {
             )}
           </div>
 
+          {/* Cobrado por método de pago (split payment) */}
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+            <h2 className="text-base font-semibold text-slate-800 mb-4">Cobrado por método de pago</h2>
+            {data.porMetodoPago.length === 0 ? (
+              <p className="text-sm text-slate-400">Sin cobros en el período.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b text-slate-500">
+                      <th className="py-2.5 pr-4 font-medium">Método</th>
+                      <th className="py-2.5 pr-4 font-medium text-right">Operaciones</th>
+                      <th className="py-2.5 font-medium text-right">Total cobrado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.porMetodoPago.map((m) => (
+                      <tr key={m.metodo} className="border-b border-slate-100 last:border-0">
+                        <td className="py-2.5 pr-4 text-slate-700 capitalize">{m.metodo}</td>
+                        <td className="py-2.5 pr-4 text-right tabular-nums text-slate-600">{m.cantidad}</td>
+                        <td className="py-2.5 text-right tabular-nums font-semibold text-slate-800">{formatGs(m.total)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
           {/* Total por producto */}
           <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
             <h2 className="text-base font-semibold text-slate-800 mb-4">Total por producto</h2>

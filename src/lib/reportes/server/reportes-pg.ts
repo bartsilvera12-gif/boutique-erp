@@ -304,6 +304,7 @@ export async function getReporteVentas(
   const tV = quoteSchemaTable(schema, "ventas");
   const tVI = quoteSchemaTable(schema, "ventas_items");
   const tCli = quoteSchemaTable(schema, "clientes");
+  const tVPD = quoteSchemaTable(schema, "ventas_pagos_detalle");
   const p = pool();
   // `perVNet` para métricas (excluye anuladas). `perVAll` para listados (incluye anuladas con badge).
   const perVNet = `v.empresa_id=$1::uuid AND v.estado <> 'anulada' AND v.fecha>=$2::timestamptz AND v.fecha<=$3::timestamptz`;
@@ -327,14 +328,32 @@ export async function getReporteVentas(
     `SELECT vi.producto_nombre, SUM(vi.cantidad)::float8 AS cantidad, SUM(vi.total_linea)::float8 AS total
        FROM ${tVI} vi JOIN ${tV} v ON v.id=vi.venta_id WHERE ${perVNet}
       GROUP BY vi.producto_id, vi.producto_nombre ORDER BY total DESC`, args);
-  // Detalle de ventas: INCLUYE anuladas para verlas con badge.
+  // Detalle de ventas: INCLUYE anuladas para verlas con badge. El método
+  // que se muestra en la lista viene del detalle de pagos (split payment):
+  // si hay 1 solo método, lo mostramos; si hay más de uno, mostramos 'MIXTO'
+  // (fallback al campo `v.metodo_pago` legacy si no hay detalles).
   const ventasQ = p.query<VentaReporteRow>(
-    `SELECT v.id, v.numero_control, v.fecha, c.nombre AS cliente, v.metodo_pago, v.estado,
+    `SELECT v.id, v.numero_control, v.fecha, c.nombre AS cliente,
+            COALESCE(
+              (SELECT CASE WHEN count(DISTINCT metodo_pago)=1 THEN MIN(metodo_pago) ELSE 'MIXTO' END
+                 FROM ${tVPD} d WHERE d.venta_id=v.id AND d.empresa_id=v.empresa_id),
+              v.metodo_pago
+            ) AS metodo_pago, v.estado,
             (SELECT count(*) FROM ${tVI} vi WHERE vi.venta_id=v.id)::int AS items_count,
             v.total::float8 AS total
        FROM ${tV} v
        LEFT JOIN ${tCli} c ON c.id=v.cliente_id AND c.empresa_id=v.empresa_id
       WHERE ${perVAll} ORDER BY v.fecha DESC, v.numero_control DESC`, args);
+  // Cobrado por método (source of truth = ventas_pagos_detalle). Excluye anuladas.
+  const porMetodoPagoQ = p.query<{ metodo: string; cantidad: number; total: number }>(
+    `SELECT d.metodo_pago AS metodo, count(*)::int AS cantidad,
+            COALESCE(SUM(d.monto),0)::float8 AS total
+       FROM ${tVPD} d
+       JOIN ${tV} v ON v.id=d.venta_id AND v.empresa_id=d.empresa_id
+      WHERE d.empresa_id=$1::uuid AND v.estado <> 'anulada'
+        AND v.fecha>=$2::timestamptz AND v.fecha<=$3::timestamptz
+      GROUP BY d.metodo_pago
+      ORDER BY total DESC`, args);
   const itemsQ = p.query<ItemVendidoRow>(
     `SELECT v.numero_control, v.fecha, vi.producto_nombre,
             vi.cantidad::float8 AS cantidad, vi.precio_venta::float8 AS precio_venta,
@@ -343,8 +362,8 @@ export async function getReporteVentas(
        FROM ${tVI} vi JOIN ${tV} v ON v.id=vi.venta_id WHERE ${perVAll}
       ORDER BY v.fecha DESC, v.numero_control DESC`, args);
 
-  const [tot, anul, itemsTot, tipoPrecio, porProd, ventas, items] = await Promise.all([
-    totQ, anuladasQ, itemsTotQ, tipoPrecioQ, porProdQ, ventasQ, itemsQ]);
+  const [tot, anul, itemsTot, tipoPrecio, porProd, ventas, items, porMetodoPago] = await Promise.all([
+    totQ, anuladasQ, itemsTotQ, tipoPrecioQ, porProdQ, ventasQ, itemsQ, porMetodoPagoQ]);
 
   const cantidadVentas = num(tot.rows[0]?.ventas);
   const totalVendido = num(tot.rows[0]?.total);
@@ -367,6 +386,11 @@ export async function getReporteVentas(
     unidadesVendidas: num(itemsTot.rows[0]?.unidades),
     porTipoPrecio,
     porProducto: porProd.rows.map((r) => ({ ...r, cantidad: num(r.cantidad), total: num(r.total) })),
+    porMetodoPago: porMetodoPago.rows.map((r) => ({
+      metodo: r.metodo || "sin_metodo",
+      cantidad: num(r.cantidad),
+      total: num(r.total),
+    })),
     ventas: ventas.rows.map((v) => ({
       ...v,
       cliente: v.cliente || null,

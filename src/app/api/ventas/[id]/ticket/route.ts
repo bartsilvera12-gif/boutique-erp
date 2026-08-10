@@ -159,6 +159,13 @@ interface PedidoBrief {
 
 // ── Render de cada copia ───────────────────────────────────────────────────
 
+interface PagoDetalleRow {
+  metodo_pago: string | null;
+  monto: number | string;
+  entidad_nombre_snapshot: string | null;
+  referencia: string | null;
+}
+
 function renderCopia(opts: {
   tipo: "cliente" | "pizzeria" | "plancha";
   venta: VentaRow;
@@ -167,8 +174,9 @@ function renderCopia(opts: {
   fontPx: number;
   isLast: boolean;
   negocio: string;
+  pagos: PagoDetalleRow[];
 }): string {
-  const { tipo, venta, items, brief, fontPx, isLast } = opts;
+  const { tipo, venta, items, brief, fontPx, isLast, pagos } = opts;
   const showPrices = tipo === "cliente";
   const sectorBadge = tipo === "pizzeria" ? "COMANDA PIZZERÍA" : tipo === "plancha" ? "COMANDA PLANCHA" : "";
   const modalidad = modalidadLabel(brief?.modalidad);
@@ -216,6 +224,23 @@ function renderCopia(opts: {
   const headerCocina = sectorBadge
     ? `<div class="sector-banner">${sectorBadge}</div>`
     : "";
+  const pagosHtml = (() => {
+    if (pagos.length === 0) {
+      return `<tr><td class="lbl">Pago</td><td class="val">${metodoPagoLabel(venta.metodo_pago)}</td></tr>`;
+    }
+    if (pagos.length === 1) {
+      const p = pagos[0];
+      const extra = p.entidad_nombre_snapshot ? ` · ${escapeHtml(p.entidad_nombre_snapshot)}` : "";
+      return `<tr><td class="lbl">Pago</td><td class="val">${metodoPagoLabel(p.metodo_pago)}${extra}</td></tr>`;
+    }
+    // Split payment: 1 fila por método con su monto.
+    return pagos
+      .map((p) => {
+        const entidad = p.entidad_nombre_snapshot ? ` (${escapeHtml(p.entidad_nombre_snapshot)})` : "";
+        return `<tr><td class="lbl">${metodoPagoLabel(p.metodo_pago)}${entidad}</td><td class="val">${formatGs(Number(p.monto))}</td></tr>`;
+      })
+      .join("");
+  })();
   const totalesHtml = showPrices
     ? `<hr>
        <table class="totales">
@@ -223,7 +248,7 @@ function renderCopia(opts: {
            <tr><td class="lbl">Subtotal</td><td class="val">${formatGs(subtotal)}</td></tr>
            ${ivaTotal > 0 ? `<tr><td class="lbl">IVA</td><td class="val">${formatGs(ivaTotal)}</td></tr>` : ""}
            <tr class="total-row"><td class="lbl">TOTAL</td><td class="val">${formatGs(total)}</td></tr>
-           <tr><td class="lbl">Pago</td><td class="val">${metodoPagoLabel(venta.metodo_pago)}</td></tr>
+           ${pagosHtml}
          </tbody>
        </table>`
     : "";
@@ -492,6 +517,19 @@ export async function GET(request: NextRequest, ctxParams: { params: Promise<{ i
     return { ...it, sector };
   });
 
+  // Detalle de pagos (split payment): 1..N filas por venta.
+  const pagosQ = await ctx.supabase
+    .from("ventas_pagos_detalle")
+    .select("metodo_pago, monto, entidad_nombre_snapshot, referencia")
+    .eq("venta_id", id)
+    .eq("empresa_id", empresaId);
+  const pagos: PagoDetalleRow[] = ((pagosQ.data ?? []) as unknown as PagoDetalleRow[]).map((p) => ({
+    metodo_pago: p.metodo_pago,
+    monto: Number(p.monto),
+    entidad_nombre_snapshot: p.entidad_nombre_snapshot,
+    referencia: p.referencia,
+  }));
+
   // Decidir qué copias imprimir
   const hayPizzeria = items.some((i) => i.sector === "pizzeria");
   const hayPlancha = items.some((i) => i.sector === "plancha");
@@ -504,7 +542,7 @@ export async function GET(request: NextRequest, ctxParams: { params: Promise<{ i
 
   const seccionesHtml = copias
     .map((tipo, idx) =>
-      renderCopia({ tipo, venta, items, brief, fontPx, isLast: idx === copias.length - 1, negocio })
+      renderCopia({ tipo, venta, items, brief, fontPx, isLast: idx === copias.length - 1, negocio, pagos })
     )
     .join("");
 

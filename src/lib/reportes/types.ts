@@ -141,6 +141,13 @@ export interface ItemVendidoRow {
   tipo_precio: TipoPrecioReporte;
 }
 
+/** Cobrado por método de pago (agregado sobre ventas_pagos_detalle). */
+export interface VentaMetodoPagoTotal {
+  metodo: string;          // efectivo | tarjeta | transferencia | qr | ...
+  cantidad: number;        // # de pagos con ese método
+  total: number;           // SUM(monto)
+}
+
 export interface VentasReporte {
   mes: string;
   totalVendido: number;      // excluye anuladas (neto)
@@ -151,6 +158,8 @@ export interface VentasReporte {
   /** Desglose por nivel de precio (datos null se cuentan como minorista). Excluye anuladas. */
   porTipoPrecio: Record<TipoPrecioReporte, VentaTipoPrecioTotal>;
   porProducto: VentaProductoTotal[];
+  /** Cobrado por método de pago (excluye anuladas). Split payment: 1 fila por método. */
+  porMetodoPago: VentaMetodoPagoTotal[];
   ventas: VentaReporteRow[];  // incluye anuladas (badge en UI)
   items: ItemVendidoRow[];
   anuladas: { cantidad: number; total: number };
