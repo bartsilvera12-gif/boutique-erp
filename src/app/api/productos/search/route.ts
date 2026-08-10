@@ -216,12 +216,20 @@ export async function GET(request: NextRequest) {
       marca_repuesto: (r.marca_repuesto as string | null) ?? null,
     }));
 
-    // Firmar URLs solo para los primeros 20 visibles (optimización).
+    // Firmar URLs solo para los primeros 20 visibles (optimización). Si la
+    // firma falla (bucket privado sin permiso, RLS, etc.) NO rompemos toda
+    // la búsqueda — la miniatura simplemente queda vacía y el usuario ve
+    // el placeholder.
     const SIGN_TOP = 20;
     const signedUrls: (string | null)[] = await Promise.all(
-      rows.slice(0, SIGN_TOP).map(async (r) =>
-        r.imagen_path ? await signProductoImagen(supabase, r.imagen_path, 3600) : null
-      )
+      rows.slice(0, SIGN_TOP).map(async (r) => {
+        if (!r.imagen_path) return null;
+        try {
+          return await signProductoImagen(supabase, r.imagen_path, 3600);
+        } catch {
+          return null;
+        }
+      })
     );
 
     const hits: ProductoSearchHit[] = rows.map((r, i) => ({
@@ -255,9 +263,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(successResponse({ items: hits, count: hits.length, q, vehiculo: vehiculoRaw || null }));
   } catch (err) {
-    console.error("[/api/productos/search]", err instanceof Error ? err.message : err);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[/api/productos/search]", msg);
     return NextResponse.json(
-      errorResponse("No se pudo realizar la búsqueda. Intentá nuevamente."),
+      errorResponse(`No se pudo realizar la búsqueda: ${msg}`),
       { status: 500 }
     );
   }

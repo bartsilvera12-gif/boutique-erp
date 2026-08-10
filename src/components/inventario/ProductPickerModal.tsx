@@ -97,7 +97,7 @@ export default function ProductPickerModal({
 }: Props) {
   const [q, setQ] = useState("");
   /** Filtro opcional por vehículo compatible (marca o modelo). */
-  const [vehiculoFiltro, setVehiculoFiltro] = useState("");
+  const vehiculoFiltro = "";
   const [items, setItems] = useState<ProductoPickerItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -125,7 +125,7 @@ export default function ProductPickerModal({
     setFeedback(null);
   }
 
-  useEffect(() => { if (open) { setQ(""); setVehiculoFiltro(""); setError(null); setSel(null); setTimeout(() => inputRef.current?.focus(), 50); } }, [open]);
+  useEffect(() => { if (open) { setQ(""); setError(null); setSel(null); setTimeout(() => inputRef.current?.focus(), 50); } }, [open]);
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -228,28 +228,8 @@ export default function ProductPickerModal({
               </svg>
             </button>
           </div>
-          {/* Filtro adicional por vehículo compatible (rubro autopartes). */}
-          <div className="mt-2 flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-slate-400 shrink-0"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
-            <input
-              type="text"
-              value={vehiculoFiltro}
-              onChange={(e) => setVehiculoFiltro(e.target.value)}
-              placeholder="Filtrar por vehículo compatible (marca o modelo)…"
-              className="flex-1 bg-transparent outline-none text-sm text-slate-700 placeholder:text-slate-400"
-              autoComplete="off"
-            />
-            {vehiculoFiltro && (
-              <button
-                type="button"
-                onClick={() => setVehiculoFiltro("")}
-                className="text-[11px] text-slate-400 hover:text-slate-700"
-                title="Quitar filtro"
-              >limpiar</button>
-            )}
-          </div>
           <p className="mt-2 text-xs text-slate-400">
-            Buscá por código OEM/alternativo/marca o filtrá por vehículo. Mínimo 2 letras.
+            Mínimo 2 letras. Buscá por nombre, SKU o código de barras.
           </p>
         </div>
 
