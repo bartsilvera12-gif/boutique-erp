@@ -339,10 +339,18 @@ export default function NuevaVentaPage() {
     return () => { cancelled = true; };
   }, []);
 
-  // Auto-open del picker desactivado a pedido del usuario: bajo carga alta
-  // del backend, disparar la búsqueda apenas se abre la página resulta en
-  // 502. Ahora el usuario abre el buscador manualmente (F3 o el botón
-  // "+ Agregar producto").
+  // Auto-abrir el picker al entrar (carrito vacío). El picker NO hace
+  // ninguna búsqueda automática al abrir; recién dispara el fetch cuando
+  // el usuario tipea ≥2 letras. Excepción: si se está facturando un
+  // pedido (?pedido_id=...) el carrito viene precargado y no se auto-abre.
+  useEffect(() => {
+    let tienePedido = false;
+    try {
+      tienePedido = !!new URLSearchParams(window.location.search).get("pedido_id");
+    } catch { tienePedido = false; }
+    if (!tienePedido) setPickerOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Cerrar dropdown al hacer clic fuera
   useEffect(() => {

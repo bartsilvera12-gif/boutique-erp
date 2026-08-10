@@ -133,19 +133,27 @@ export default function ProductPickerModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  // Buscar (debounce 200ms)
+  // Buscar (debounce 200ms). IMPORTANTE: NO se hace fetch hasta que el
+  // usuario tipee al menos 2 caracteres (o escanee un código de barras,
+  // que también dispara el onChange del input). Esto evita disparar
+  // requests pesados apenas se abre el modal — bajo carga del backend
+  // eso resulta en 502.
   useEffect(() => {
     if (!open) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
+    const qTrim = q.trim();
+    if (qTrim.length < 2) {
+      // Sin query → limpiar resultados y cortar. Nada de fetch.
+      setItems([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
     debounceRef.current = setTimeout(async () => {
       setLoading(true); setError(null);
       try {
         const url = new URL("/api/productos/search", window.location.origin);
-        if (q.trim().length >= 2) url.searchParams.set("q", q.trim());
-        if (vehiculoFiltro.trim().length >= 2) url.searchParams.set("vehiculo", vehiculoFiltro.trim());
-        // 500 = MAX_LIMIT del endpoint. Para catálogos > 500 productos el camino
-        // feliz es tipear en el buscador (filtra server-side); el cap es solo
-        // para que el listado inicial sin búsqueda no sienta cortado.
+        url.searchParams.set("q", qTrim);
         url.searchParams.set("limit", "500");
         const res = await fetch(url.toString(), { credentials: "include" });
         const json = await res.json();
@@ -161,7 +169,7 @@ export default function ProductPickerModal({
       } finally { setLoading(false); }
     }, 200);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [q, vehiculoFiltro, open]);
+  }, [q, open]);
 
   function selectProducto(p: ProductoPickerItem) {
     setSel(p);
