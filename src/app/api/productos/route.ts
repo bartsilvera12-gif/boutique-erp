@@ -238,7 +238,37 @@ export async function POST(request: NextRequest) {
       const msg = ins.error.message ?? "";
       if (/duplicate key|unique|23505/i.test(msg)) {
         if (/sku/i.test(msg)) {
-          return NextResponse.json(errorResponse("Ya existe un producto con ese SKU."), { status: 409 });
+          // Sugerir el próximo libre para que el usuario copie/pegue.
+          let sugerido: string | null = null;
+          try {
+            const skuIntentado = String(insertPayload.sku ?? "").trim();
+            const m = /^(.+?)[-_](\d+)$/.exec(skuIntentado);
+            if (m) {
+              const prefix = m[1];
+              const width = m[2].length;
+              const all = await sb
+                .from("productos")
+                .select("sku")
+                .eq("empresa_id", auth.empresa_id)
+                .ilike("sku", `${prefix}-%`);
+              const taken = new Set(
+                ((all.data ?? []) as Array<{ sku: string | null }>)
+                  .map((r) => (r.sku ?? "").trim().toUpperCase())
+              );
+              const pad = (n: number, w: number) => String(n).padStart(Math.max(w, 1), "0");
+              let n = parseInt(m[2], 10) + 1;
+              for (let i = 0; i < 10000; i++) {
+                const c = `${prefix}-${pad(n, width)}`;
+                if (!taken.has(c.toUpperCase())) { sugerido = c; break; }
+                n++;
+              }
+            }
+          } catch { /* si falla, seguimos sin sugerencia */ }
+          const suf = sugerido ? ` El siguiente disponible es ${sugerido}.` : "";
+          return NextResponse.json(
+            errorResponse(`Ya existe un producto con ese SKU (puede ser uno borrado).${suf}`),
+            { status: 409 }
+          );
         }
         if (/codigo_barras|barras/i.test(msg)) {
           return NextResponse.json(errorResponse("Ya existe un producto con ese código de barras."), {
