@@ -295,14 +295,15 @@ export default function NuevoProductoPage() {
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log("[inventario/nuevo] handleSubmit start", { tipoGastro });
-    if (submitting) return;
+  async function handleSubmit(e: React.FormEvent, retryCount = 0, skuOverride?: string) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    console.log("[inventario/nuevo] handleSubmit start", { tipoGastro, retryCount, skuOverride });
+    if (submitting && retryCount === 0) return;
     setErrorDuplicado(null);
     setErrorGeneral(null);
     setSubmitting(true);
+    // SKU efectivo para este intento (override tiene prioridad para el retry).
+    const skuEfectivo = (skuOverride ?? form.sku).trim().toUpperCase();
 
     const showErr = (msg: string) => {
       setErrorGeneral(msg);
@@ -313,21 +314,24 @@ export default function NuevoProductoPage() {
       // Validaciones básicas en JS (HTML5 desactivado con noValidate).
       const nombreT = form.nombre.trim();
       if (!nombreT) { showErr("El nombre es obligatorio."); return; }
-      if (tipoGastro === "reventa" && !form.sku.trim()) { showErr("El SKU es obligatorio para productos de reventa."); return; }
+      if (tipoGastro === "reventa" && !skuEfectivo) { showErr("El SKU es obligatorio para productos de reventa."); return; }
 
       // Código de barras: se guarda tal cual (escaneable). Vacío → null (sin barcode).
       const codigoEnInput = form.codigo_barras.trim();
 
-      // Pre-chequeo duplicado tolerante a fallos de red.
-      try {
-        const duplicado = await productoExiste(form.sku, form.nombre);
-        if (duplicado) {
-          setErrorDuplicado(`Ya existe "${duplicado.nombre}" con SKU ${duplicado.sku}.`);
-          try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch {}
-          return;
+      // Pre-chequeo duplicado tolerante a fallos de red. Skipeado en reintentos
+      // (ya sabemos que el backend nos dio el sku libre siguiente).
+      if (retryCount === 0) {
+        try {
+          const duplicado = await productoExiste(skuEfectivo, form.nombre);
+          if (duplicado) {
+            setErrorDuplicado(`Ya existe "${duplicado.nombre}" con SKU ${duplicado.sku}.`);
+            try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch {}
+            return;
+          }
+        } catch (err) {
+          console.warn("[inventario/nuevo] productoExiste failed, ignorando:", err);
         }
-      } catch (err) {
-        console.warn("[inventario/nuevo] productoExiste failed, ignorando:", err);
       }
       const codigo: string | null = codigoEnInput || null;
       const interno = false; // ya no se autogeneran códigos internos; el barcode es real
@@ -337,7 +341,7 @@ export default function NuevoProductoPage() {
         guardado = await saveProducto({
           nombre: form.nombre.trim().toUpperCase(),
           descripcion: form.descripcion.trim() || null,
-          sku: form.sku.trim().toUpperCase(),
+          sku: skuEfectivo,
           costo_promedio: parseFloat(form.costo_promedio) || 0,
           precio_venta: parseFloat(form.precio_venta) || 0,
           precio_mayorista: form.precio_mayorista.trim() !== "" ? parseFloat(form.precio_mayorista) || null : null,
@@ -376,7 +380,24 @@ export default function NuevoProductoPage() {
         });
       } catch (err) {
         console.error("[inventario/nuevo] saveProducto error:", err);
-        showErr(err instanceof Error ? err.message : "No se pudo guardar el producto.");
+        const msg = err instanceof Error ? err.message : "No se pudo guardar el producto.";
+        // Auto-retry si el backend nos dio el siguiente SKU libre y no
+        // hemos reintentado ya (evita loop infinito).
+        const match = /siguiente disponible es\s+([A-Z0-9_-]+)/i.exec(msg);
+        if (match && retryCount < 3) {
+          const nuevoSku = match[1];
+          console.log("[inventario/nuevo] auto-retry con SKU sugerido:", nuevoSku);
+          setForm((prev) => ({ ...prev, sku: nuevoSku })); // visible en la UI
+          setSubmitting(false);
+          // Reintento inmediato pasando skuOverride para no depender del state async.
+          await handleSubmit(
+            { preventDefault: () => {}, stopPropagation: () => {} } as unknown as React.FormEvent,
+            retryCount + 1,
+            nuevoSku,
+          );
+          return;
+        }
+        showErr(msg);
         return;
       }
 

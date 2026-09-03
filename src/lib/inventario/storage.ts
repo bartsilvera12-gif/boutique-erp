@@ -187,6 +187,10 @@ export async function productoExiste(
   sku: string,
   nombre: string
 ): Promise<Producto | null> {
+  // Nota: solo chequea productos activos. Si el SKU está tomado por uno
+  // borrado (soft delete), el pre-chequeo pasa pero el backend rechaza
+  // con 409 e incluye "El siguiente disponible es X" — el form auto-
+  // reintenta con ese SKU (ver handleSubmit en inventario/nuevo/page.tsx).
   const productos = await getProductos();
   const skuNorm = sku.toLowerCase().trim();
   const nombreNorm = nombre.toLowerCase().trim();
