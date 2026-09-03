@@ -36,11 +36,25 @@ export async function GET(request: NextRequest) {
     // Trae TODOS los SKU (incluyendo productos borrados con activo=false)
     // porque el UNIQUE de la DB no ignora borrados: reutilizar el SKU de
     // un borrado tira "duplicate key".
-    const { data, error } = await ctx.supabase
-      .from("productos")
-      .select("sku")
-      .eq("empresa_id", ctx.auth.empresa_id);
-    if (error) throw new Error(error.message);
+    //
+    // IMPORTANTE: PostgREST tiene un default de 1000 filas por respuesta.
+    // Con catálogos > 1000 productos el max calculado es incorrecto
+    // (falta ver los últimos SKUs → sugiere un número más bajo). Paginamos
+    // manualmente hasta agotar todas las filas.
+    const PAGE = 1000;
+    const allRows: Array<{ sku: string | null }> = [];
+    for (let offset = 0; offset < 100_000; offset += PAGE) {
+      const q = await ctx.supabase
+        .from("productos")
+        .select("sku")
+        .eq("empresa_id", ctx.auth.empresa_id)
+        .range(offset, offset + PAGE - 1);
+      if (q.error) throw new Error(q.error.message);
+      const chunk = (q.data ?? []) as Array<{ sku: string | null }>;
+      allRows.push(...chunk);
+      if (chunk.length < PAGE) break; // no hay más páginas
+    }
+    const data = allRows;
 
     // Set con todos los SKUs case-insensitive para chequear libres rápido.
     const taken = new Set<string>();
