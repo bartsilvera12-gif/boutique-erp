@@ -170,12 +170,11 @@ export default function NuevoProductoPage() {
     setImagenError(null);
   }
 
-  // Patrones de SKU según el tipo elegido (para "Generar SKU" y el dropdown).
-  // Además: si el campo SKU está vacío al cargar, auto-completar con el
-  // patrón MÁS USADO (el que tiene el número más alto → más productos con
-  // ese prefijo). Para la boutique eso es "SOL"; en otras instancias
-  // puede ser el que corresponda. Así la usuaria abre el form y ya ve el
-  // siguiente número disponible sin tocar nada.
+  // Patrones de SKU + auto-completado. Al cargar los patrones, si el campo
+  // SKU está vacío O si tiene un valor que coincide con el prefijo de un
+  // patrón (y por lo tanto puede estar en conflicto con uno borrado), lo
+  // reemplazamos por el "siguiente" real que devuelve el backend (que ya
+  // salta huecos ocupados por productos borrados).
   useEffect(() => {
     if (!tipoGastro) return;
     let cancel = false;
@@ -185,17 +184,27 @@ export default function NuevoProductoPage() {
         if (cancel || !j?.success) return;
         const patrones = (j.data?.patrones ?? []) as { prefix: string; siguiente: string }[];
         setSkuPatrones(patrones);
-        // Auto-completar SKU si el campo está vacío. Elegimos el patrón con
-        // el número siguiente más alto (proxy de "más productos ya creados").
         setForm((prev) => {
-          if (prev.sku.trim() !== "") return prev; // respetar lo que la usuaria escribió
+          const actual = prev.sku.trim().toUpperCase();
           if (patrones.length === 0) return prev;
           const numOf = (s: string) => {
             const m = /(\d+)$/.exec(s);
             return m ? parseInt(m[1], 10) : 0;
           };
           const masUsado = patrones.reduce((a, b) => (numOf(b.siguiente) > numOf(a.siguiente) ? b : a));
-          return { ...prev, sku: masUsado.siguiente };
+          // Vacío → poner el siguiente del patrón más usado.
+          if (actual === "") return { ...prev, sku: masUsado.siguiente };
+          // Si el SKU actual pertenece a algún patrón conocido, forzar el
+          // siguiente REAL de ese patrón (por si estaba tomado por borrados).
+          const m = /^(.+?)[-_](\d+)$/.exec(actual);
+          if (m) {
+            const prefixActual = m[1];
+            const patron = patrones.find((p) => p.prefix.toUpperCase() === prefixActual);
+            if (patron && patron.siguiente.toUpperCase() !== actual) {
+              return { ...prev, sku: patron.siguiente };
+            }
+          }
+          return prev;
         });
       })
       .catch(() => {});
