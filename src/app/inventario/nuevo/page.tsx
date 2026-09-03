@@ -171,12 +171,33 @@ export default function NuevoProductoPage() {
   }
 
   // Patrones de SKU según el tipo elegido (para "Generar SKU" y el dropdown).
+  // Además: si el campo SKU está vacío al cargar, auto-completar con el
+  // patrón MÁS USADO (el que tiene el número más alto → más productos con
+  // ese prefijo). Para la boutique eso es "SOL"; en otras instancias
+  // puede ser el que corresponda. Así la usuaria abre el form y ya ve el
+  // siguiente número disponible sin tocar nada.
   useEffect(() => {
     if (!tipoGastro) return;
     let cancel = false;
     fetch(`/api/productos/sku-sugerencias?tipo=${tipoGastro}`, { credentials: "include", cache: "no-store" })
       .then((r) => r.json())
-      .then((j) => { if (!cancel && j?.success) setSkuPatrones(j.data?.patrones ?? []); })
+      .then((j) => {
+        if (cancel || !j?.success) return;
+        const patrones = (j.data?.patrones ?? []) as { prefix: string; siguiente: string }[];
+        setSkuPatrones(patrones);
+        // Auto-completar SKU si el campo está vacío. Elegimos el patrón con
+        // el número siguiente más alto (proxy de "más productos ya creados").
+        setForm((prev) => {
+          if (prev.sku.trim() !== "") return prev; // respetar lo que la usuaria escribió
+          if (patrones.length === 0) return prev;
+          const numOf = (s: string) => {
+            const m = /(\d+)$/.exec(s);
+            return m ? parseInt(m[1], 10) : 0;
+          };
+          const masUsado = patrones.reduce((a, b) => (numOf(b.siguiente) > numOf(a.siguiente) ? b : a));
+          return { ...prev, sku: masUsado.siguiente };
+        });
+      })
       .catch(() => {});
     return () => { cancel = true; };
   }, [tipoGastro]);
