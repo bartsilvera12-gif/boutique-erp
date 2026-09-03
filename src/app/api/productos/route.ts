@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
               const all = await sb
                 .from("productos")
                 .select("sku")
-                .eq("empresa_id", auth.empresa_id)
+                .eq("empresa_id", empresaId)
                 .ilike("sku", `${prefix}-%`);
               const taken = new Set(
                 ((all.data ?? []) as Array<{ sku: string | null }>)
