@@ -43,6 +43,35 @@ function manejaStock(p: { controla_stock?: boolean; modo_receta?: string }): boo
 }
 
 /**
+ * Detecta el talle en el nombre del producto (P/M/G/XG/XL/XXL/etc).
+ * Busca la palabra aislada (rodeada por espacios o al final).
+ * Devuelve null si no encuentra un talle reconocido.
+ */
+function detectarTalle(nombre: string): string | null {
+  const upper = nombre.toUpperCase();
+  // Talles ordenados de más largo a más corto (para que "XXG" gane sobre "G").
+  const talles = ["XXXG", "XXXL", "XXG", "XXL", "XG", "XL", "GG", "P", "M", "G", "CH", "MED", "GRA"];
+  for (const t of talles) {
+    // Regex: talle aislado (inicio o espacio antes, espacio o fin después).
+    const re = new RegExp(`(^|\\s)${t}(\\s|$)`);
+    if (re.test(upper)) return t;
+  }
+  return null;
+}
+
+/** Color del badge por talle. */
+function colorTalle(talle: string): string {
+  const t = talle.toUpperCase();
+  if (t === "P" || t === "CH") return "bg-blue-100 text-blue-800 border-blue-300";
+  if (t === "M" || t === "MED") return "bg-green-100 text-green-800 border-green-300";
+  if (t === "G" || t === "GRA" || t === "GG") return "bg-red-100 text-red-800 border-red-300";
+  if (t === "XG" || t === "XL" || t === "XXG" || t === "XXL" || t === "XXXG" || t === "XXXL") {
+    return "bg-purple-100 text-purple-800 border-purple-300";
+  }
+  return "bg-slate-100 text-slate-700 border-slate-300";
+}
+
+/**
  * Resultado emitido al hacer clic en "Agregar a la venta": el caller
  * recibe el producto, la cantidad, el precio (en la moneda de la venta)
  * y el tipo de IVA. El precio se interpreta en la moneda activa de la
@@ -293,6 +322,18 @@ export default function ProductPickerModal({
                           </svg>
                         )}
                       </div>
+                      {(() => {
+                        const talle = detectarTalle(p.nombre);
+                        if (!talle) return null;
+                        return (
+                          <span
+                            title={`Talle ${talle}`}
+                            className={`inline-flex items-center justify-center rounded-md border font-bold text-sm min-w-[44px] px-2 py-1 shrink-0 ${colorTalle(talle)}`}
+                          >
+                            {talle}
+                          </span>
+                        );
+                      })()}
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-slate-800 truncate">
                           {p.ventas_90d && p.ventas_90d > 0 && (
@@ -379,7 +420,21 @@ export default function ProductPickerModal({
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-800">{sel.nombre}</h3>
+                  <div className="flex items-center gap-2">
+                    {(() => {
+                      const talle = detectarTalle(sel.nombre);
+                      if (!talle) return null;
+                      return (
+                        <span
+                          title={`Talle ${talle}`}
+                          className={`inline-flex items-center justify-center rounded-md border font-bold text-lg min-w-[52px] px-3 py-1 shrink-0 ${colorTalle(talle)}`}
+                        >
+                          {talle}
+                        </span>
+                      );
+                    })()}
+                    <h3 className="text-lg font-semibold text-slate-800 min-w-0">{sel.nombre}</h3>
+                  </div>
                   <p className="text-xs text-slate-500 mt-0.5">
                     SKU <span className="font-mono">{sel.sku}</span>
                     {sel.codigo_barras && <> · <span className="font-mono">{sel.codigo_barras}</span></>}
